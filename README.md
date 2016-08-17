@@ -66,7 +66,8 @@ The **format** can be:
 ```
 #show eax
 #show dword [eax] hexadecimal
-#show memory [eax + 4] signed decimal
+#show dword [eax + 4] signed decimal
+#show -1 binary
 ```
 
 The **format** is optinal, if no format is specified `unsigned decimal` will be used.
