@@ -1,0 +1,14 @@
+g++ -c -I . -O3 -o xallocpool.o xallocpool.cpp
+g++ -c -I . -O3 -o mips32_sim.o mips32_sim.cpp
+g++ -c -I . -O3 -o x86_lexer.o x86_lexer.cpp
+g++ -c -I . -O3 -o x86_tree.o x86_tree.cpp
+g++ -c -I . -O3 -o mips32_parser.o mips32_parser.cpp
+g++ -c -I . -O3 -o isimulator.o isimulator.cpp
+g++ -c -I . -O3 -o x86_sim.o x86_sim.cpp
+g++ -c -I . -O3 -o main.o main.cpp
+g++ -c -I . -O3 -o util.o util.cpp
+lemon -Tlempar.c x86_parser.y
+mkdir -p generated
+mv x86_parser.c generated/x86_parser.cpp
+g++ -c -I . -O3 -o generated/x86_parser.o generated/x86_parser.cpp
+g++ -ledit -o EasyASM xallocpool.o mips32_sim.o x86_lexer.o x86_tree.o mips32_parser.o isimulator.o x86_sim.o main.o util.o generated/x86_parser.o

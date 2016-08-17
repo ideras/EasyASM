@@ -1,0 +1,470 @@
+State 0:
+          input ::= * statements MTK_EOF
+          statements ::= * statements MTK_EOL statement
+          statements ::= * statement
+          statement ::= * instruction
+          statement ::= * command
+          statement ::= * MTK_ID MTK_COLON
+          statement ::= * MTK_ID MTK_COLON instruction
+          statement ::= * MTK_ID MTK_COLON command
+          command ::= * MCKW_SHOW cmd_argument opt_data_format
+          command ::= * MCKW_SET cmd_argument MTK_OPEQUAL r_value
+          command ::= * MCKW_EXEC MSTR_LITERAL
+          command ::= * MCKW_STOP
+          instruction ::= * MTK_ID argument MTK_COMMA argument MTK_COMMA argument
+          instruction ::= * MTK_ID argument MTK_COMMA argument
+          instruction ::= * MTK_ID argument
+          instruction ::= * MTK_ID argument MTK_COMMA constant MTK_OPENP argument MTK_CLOSEP
+
+                        MTK_ID shift        2      
+                     MCKW_SHOW shift        16     
+                      MCKW_SET shift        15     
+                     MCKW_EXEC shift        24     
+                     MCKW_STOP shift-reduce 11     command ::= MCKW_STOP
+                   instruction shift-reduce 3      statement ::= instruction
+                       command shift-reduce 4      statement ::= command
+                     statement shift-reduce 2      statements ::= statement
+                         input accept
+                    statements shift        19     
+
+State 1:
+          statements ::= statements MTK_EOL * statement
+          statement ::= * instruction
+          statement ::= * command
+          statement ::= * MTK_ID MTK_COLON
+          statement ::= * MTK_ID MTK_COLON instruction
+          statement ::= * MTK_ID MTK_COLON command
+          command ::= * MCKW_SHOW cmd_argument opt_data_format
+          command ::= * MCKW_SET cmd_argument MTK_OPEQUAL r_value
+          command ::= * MCKW_EXEC MSTR_LITERAL
+          command ::= * MCKW_STOP
+          instruction ::= * MTK_ID argument MTK_COMMA argument MTK_COMMA argument
+          instruction ::= * MTK_ID argument MTK_COMMA argument
+          instruction ::= * MTK_ID argument
+          instruction ::= * MTK_ID argument MTK_COMMA constant MTK_OPENP argument MTK_CLOSEP
+
+                        MTK_ID shift        2      
+                     MCKW_SHOW shift        16     
+                      MCKW_SET shift        15     
+                     MCKW_EXEC shift        24     
+                     MCKW_STOP shift-reduce 11     command ::= MCKW_STOP
+                   instruction shift-reduce 3      statement ::= instruction
+                       command shift-reduce 4      statement ::= command
+                     statement shift-reduce 1      statements ::= statements MTK_EOL statement
+
+State 2:
+          statement ::= MTK_ID * MTK_COLON
+          statement ::= MTK_ID * MTK_COLON instruction
+          statement ::= MTK_ID * MTK_COLON command
+          instruction ::= MTK_ID * argument MTK_COMMA argument MTK_COMMA argument
+          instruction ::= MTK_ID * argument MTK_COMMA argument
+          instruction ::= MTK_ID * argument
+          instruction ::= MTK_ID * argument MTK_COMMA constant MTK_OPENP argument MTK_CLOSEP
+          argument ::= * MTK_REGISTER
+          argument ::= * constant
+          argument ::= * MTK_ID
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+                        MTK_ID shift-reduce 40     argument ::= MTK_ID
+                     MTK_COLON shift        9      
+                  MTK_REGISTER shift-reduce 38     argument ::= MTK_REGISTER
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      argument shift        23     
+                      constant shift-reduce 39     argument ::= constant
+
+State 3:
+          instruction ::= MTK_ID argument MTK_COMMA constant MTK_OPENP * argument MTK_CLOSEP
+          argument ::= * MTK_REGISTER
+          argument ::= * constant
+          argument ::= * MTK_ID
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+                        MTK_ID shift-reduce 40     argument ::= MTK_ID
+                  MTK_REGISTER shift-reduce 38     argument ::= MTK_REGISTER
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      argument shift        20     
+                      constant shift-reduce 39     argument ::= constant
+
+State 4:
+          instruction ::= MTK_ID argument MTK_COMMA argument MTK_COMMA * argument
+          argument ::= * MTK_REGISTER
+          argument ::= * constant
+          argument ::= * MTK_ID
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+                        MTK_ID shift-reduce 40     argument ::= MTK_ID
+                  MTK_REGISTER shift-reduce 38     argument ::= MTK_REGISTER
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      argument shift-reduce 34     instruction ::= MTK_ID argument MTK_COMMA argument MTK_COMMA argument
+                      constant shift-reduce 39     argument ::= constant
+
+State 5:
+          instruction ::= MTK_ID argument MTK_COMMA * argument MTK_COMMA argument
+          instruction ::= MTK_ID argument MTK_COMMA * argument
+          instruction ::= MTK_ID argument MTK_COMMA * constant MTK_OPENP argument MTK_CLOSEP
+          argument ::= * MTK_REGISTER
+          argument ::= * constant
+          argument ::= * MTK_ID
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+                        MTK_ID shift-reduce 40     argument ::= MTK_ID
+                  MTK_REGISTER shift-reduce 38     argument ::= MTK_REGISTER
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      argument shift        22     
+                      constant shift        21     
+
+State 6:
+          instruction ::= MTK_ID * argument MTK_COMMA argument MTK_COMMA argument
+          instruction ::= MTK_ID * argument MTK_COMMA argument
+          instruction ::= MTK_ID * argument
+          instruction ::= MTK_ID * argument MTK_COMMA constant MTK_OPENP argument MTK_CLOSEP
+          argument ::= * MTK_REGISTER
+          argument ::= * constant
+          argument ::= * MTK_ID
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+                        MTK_ID shift-reduce 40     argument ::= MTK_ID
+                  MTK_REGISTER shift-reduce 38     argument ::= MTK_REGISTER
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      argument shift        23     
+                      constant shift-reduce 39     argument ::= constant
+
+State 7:
+          command ::= MCKW_SET cmd_argument MTK_OPEQUAL * r_value
+          r_value ::= * constant
+          r_value ::= * MTK_LBRACKET constant_list MTK_RBRACKET
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+                  MTK_LBRACKET shift        10     
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      constant shift-reduce 12     r_value ::= constant
+                       r_value shift-reduce 9      command ::= MCKW_SET cmd_argument MTK_OPEQUAL r_value
+
+State 8:
+          command ::= MCKW_SHOW cmd_argument * opt_data_format
+          opt_data_format ::= * data_format
+     (28) opt_data_format ::= *
+          data_format ::= * MCKW_HEX
+          data_format ::= * MCKW_DEC
+          data_format ::= * MCKW_SIGNED MCKW_DEC
+          data_format ::= * MCKW_UNSIGNED MCKW_DEC
+          data_format ::= * MCKW_BINARY
+
+                      MCKW_HEX shift-reduce 29     data_format ::= MCKW_HEX
+                      MCKW_DEC shift-reduce 30     data_format ::= MCKW_DEC
+                   MCKW_SIGNED shift        32     
+                 MCKW_UNSIGNED shift        31     
+                   MCKW_BINARY shift-reduce 33     data_format ::= MCKW_BINARY
+                   data_format shift-reduce 27     opt_data_format ::= data_format
+               opt_data_format shift-reduce 8      command ::= MCKW_SHOW cmd_argument opt_data_format
+                     {default} reduce       28     opt_data_format ::=
+
+State 9:
+      (5) statement ::= MTK_ID MTK_COLON *
+          statement ::= MTK_ID MTK_COLON * instruction
+          statement ::= MTK_ID MTK_COLON * command
+          command ::= * MCKW_SHOW cmd_argument opt_data_format
+          command ::= * MCKW_SET cmd_argument MTK_OPEQUAL r_value
+          command ::= * MCKW_EXEC MSTR_LITERAL
+          command ::= * MCKW_STOP
+          instruction ::= * MTK_ID argument MTK_COMMA argument MTK_COMMA argument
+          instruction ::= * MTK_ID argument MTK_COMMA argument
+          instruction ::= * MTK_ID argument
+          instruction ::= * MTK_ID argument MTK_COMMA constant MTK_OPENP argument MTK_CLOSEP
+
+                        MTK_ID shift        6      
+                     MCKW_SHOW shift        16     
+                      MCKW_SET shift        15     
+                     MCKW_EXEC shift        24     
+                     MCKW_STOP shift-reduce 11     command ::= MCKW_STOP
+                   instruction shift-reduce 6      statement ::= MTK_ID MTK_COLON instruction
+                       command shift-reduce 7      statement ::= MTK_ID MTK_COLON command
+                     {default} reduce       5      statement ::= MTK_ID MTK_COLON
+
+State 10:
+          r_value ::= MTK_LBRACKET * constant_list MTK_RBRACKET
+          constant_list ::= * constant_list MTK_COMMA constant
+          constant_list ::= * constant
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      constant shift-reduce 15     constant_list ::= constant
+                 constant_list shift        18     
+
+State 11:
+          cmd_argument ::= MCKW_MEM * opt_size_directive opt_count constant MTK_OPENP MTK_REGISTER MTK_CLOSEP
+          cmd_argument ::= MCKW_MEM * opt_size_directive opt_count MTK_REGISTER
+          cmd_argument ::= MCKW_MEM * opt_size_directive opt_count constant
+          opt_size_directive ::= * size_directive
+     (23) opt_size_directive ::= *
+          size_directive ::= * MKW_BYTE
+          size_directive ::= * MKW_HWORD
+          size_directive ::= * MKW_WORD
+
+                      MKW_BYTE shift-reduce 24     size_directive ::= MKW_BYTE
+                     MKW_HWORD shift-reduce 25     size_directive ::= MKW_HWORD
+                      MKW_WORD shift-reduce 26     size_directive ::= MKW_WORD
+            opt_size_directive shift        17     
+                size_directive shift-reduce 22     opt_size_directive ::= size_directive
+                     {default} reduce       23     opt_size_directive ::=
+
+State 12:
+          cmd_argument ::= MCKW_MEM opt_size_directive opt_count * constant MTK_OPENP MTK_REGISTER MTK_CLOSEP
+          cmd_argument ::= MCKW_MEM opt_size_directive opt_count * MTK_REGISTER
+          cmd_argument ::= MCKW_MEM opt_size_directive opt_count * constant
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+                  MTK_REGISTER shift-reduce 18     cmd_argument ::= MCKW_MEM opt_size_directive opt_count MTK_REGISTER
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      constant shift        30     
+
+State 13:
+          constant_list ::= constant_list MTK_COMMA * constant
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      constant shift-reduce 14     constant_list ::= constant_list MTK_COMMA constant
+
+State 14:
+          opt_count ::= MTK_LBRACKET * constant MTK_RBRACKET
+          constant ::= * MTK_DEC_CONSTANT
+          constant ::= * MTK_OP_MINUS MTK_DEC_CONSTANT
+          constant ::= * MTK_HEX_CONSTANT
+          constant ::= * MTK_BIN_CONSTANT
+
+              MTK_DEC_CONSTANT shift-reduce 41     constant ::= MTK_DEC_CONSTANT
+                  MTK_OP_MINUS shift        27     
+              MTK_HEX_CONSTANT shift-reduce 43     constant ::= MTK_HEX_CONSTANT
+              MTK_BIN_CONSTANT shift-reduce 44     constant ::= MTK_BIN_CONSTANT
+                      constant shift        26     
+
+State 15:
+          command ::= MCKW_SET * cmd_argument MTK_OPEQUAL r_value
+          cmd_argument ::= * MTK_REGISTER
+          cmd_argument ::= * MCKW_MEM opt_size_directive opt_count constant MTK_OPENP MTK_REGISTER MTK_CLOSEP
+          cmd_argument ::= * MCKW_MEM opt_size_directive opt_count MTK_REGISTER
+          cmd_argument ::= * MCKW_MEM opt_size_directive opt_count constant
+
+                  MTK_REGISTER shift-reduce 16     cmd_argument ::= MTK_REGISTER
+                      MCKW_MEM shift        11     
+                  cmd_argument shift        25     
+
+State 16:
+          command ::= MCKW_SHOW * cmd_argument opt_data_format
+          cmd_argument ::= * MTK_REGISTER
+          cmd_argument ::= * MCKW_MEM opt_size_directive opt_count constant MTK_OPENP MTK_REGISTER MTK_CLOSEP
+          cmd_argument ::= * MCKW_MEM opt_size_directive opt_count MTK_REGISTER
+          cmd_argument ::= * MCKW_MEM opt_size_directive opt_count constant
+
+                  MTK_REGISTER shift-reduce 16     cmd_argument ::= MTK_REGISTER
+                      MCKW_MEM shift        11     
+                  cmd_argument shift        8      
+
+State 17:
+          cmd_argument ::= MCKW_MEM opt_size_directive * opt_count constant MTK_OPENP MTK_REGISTER MTK_CLOSEP
+          cmd_argument ::= MCKW_MEM opt_size_directive * opt_count MTK_REGISTER
+          cmd_argument ::= MCKW_MEM opt_size_directive * opt_count constant
+          opt_count ::= * MTK_LBRACKET constant MTK_RBRACKET
+     (21) opt_count ::= *
+
+                  MTK_LBRACKET shift        14     
+                     opt_count shift        12     
+                     {default} reduce       21     opt_count ::=
+
+State 18:
+          r_value ::= MTK_LBRACKET constant_list * MTK_RBRACKET
+          constant_list ::= constant_list * MTK_COMMA constant
+
+                  MTK_RBRACKET shift-reduce 13     r_value ::= MTK_LBRACKET constant_list MTK_RBRACKET
+                     MTK_COMMA shift        13     
+
+State 19:
+          input ::= statements * MTK_EOF
+          statements ::= statements * MTK_EOL statement
+
+                       MTK_EOF shift        33     
+                       MTK_EOL shift        1      
+
+State 20:
+          instruction ::= MTK_ID argument MTK_COMMA constant MTK_OPENP argument * MTK_CLOSEP
+
+                    MTK_CLOSEP shift-reduce 37     instruction ::= MTK_ID argument MTK_COMMA constant MTK_OPENP argument MTK_CLOSEP
+
+State 21:
+          instruction ::= MTK_ID argument MTK_COMMA constant * MTK_OPENP argument MTK_CLOSEP
+     (39) argument ::= constant *
+
+                     MTK_OPENP shift        3      
+                     {default} reduce       39     argument ::= constant
+
+State 22:
+          instruction ::= MTK_ID argument MTK_COMMA argument * MTK_COMMA argument
+     (35) instruction ::= MTK_ID argument MTK_COMMA argument *
+
+                     MTK_COMMA shift        4      
+                     {default} reduce       35     instruction ::= MTK_ID argument MTK_COMMA argument
+
+State 23:
+          instruction ::= MTK_ID argument * MTK_COMMA argument MTK_COMMA argument
+          instruction ::= MTK_ID argument * MTK_COMMA argument
+     (36) instruction ::= MTK_ID argument *
+          instruction ::= MTK_ID argument * MTK_COMMA constant MTK_OPENP argument MTK_CLOSEP
+
+                     MTK_COMMA shift        5      
+                     {default} reduce       36     instruction ::= MTK_ID argument
+
+State 24:
+          command ::= MCKW_EXEC * MSTR_LITERAL
+
+                  MSTR_LITERAL shift-reduce 10     command ::= MCKW_EXEC MSTR_LITERAL
+
+State 25:
+          command ::= MCKW_SET cmd_argument * MTK_OPEQUAL r_value
+
+                   MTK_OPEQUAL shift        7      
+
+State 26:
+          opt_count ::= MTK_LBRACKET constant * MTK_RBRACKET
+
+                  MTK_RBRACKET shift-reduce 20     opt_count ::= MTK_LBRACKET constant MTK_RBRACKET
+
+State 27:
+          constant ::= MTK_OP_MINUS * MTK_DEC_CONSTANT
+
+              MTK_DEC_CONSTANT shift-reduce 42     constant ::= MTK_OP_MINUS MTK_DEC_CONSTANT
+
+State 28:
+          cmd_argument ::= MCKW_MEM opt_size_directive opt_count constant MTK_OPENP MTK_REGISTER * MTK_CLOSEP
+
+                    MTK_CLOSEP shift-reduce 17     cmd_argument ::= MCKW_MEM opt_size_directive opt_count constant MTK_OPENP MTK_REGISTER MTK_CLOSEP
+
+State 29:
+          cmd_argument ::= MCKW_MEM opt_size_directive opt_count constant MTK_OPENP * MTK_REGISTER MTK_CLOSEP
+
+                  MTK_REGISTER shift        28     
+
+State 30:
+          cmd_argument ::= MCKW_MEM opt_size_directive opt_count constant * MTK_OPENP MTK_REGISTER MTK_CLOSEP
+     (19) cmd_argument ::= MCKW_MEM opt_size_directive opt_count constant *
+
+                     MTK_OPENP shift        29     
+                     {default} reduce       19     cmd_argument ::= MCKW_MEM opt_size_directive opt_count constant
+
+State 31:
+          data_format ::= MCKW_UNSIGNED * MCKW_DEC
+
+                      MCKW_DEC shift-reduce 32     data_format ::= MCKW_UNSIGNED MCKW_DEC
+
+State 32:
+          data_format ::= MCKW_SIGNED * MCKW_DEC
+
+                      MCKW_DEC shift-reduce 31     data_format ::= MCKW_SIGNED MCKW_DEC
+
+State 33:
+      (0) input ::= statements MTK_EOF *
+
+                             $ reduce       0      input ::= statements MTK_EOF
+
+----------------------------------------------------
+Symbols:
+    0: $:
+    1: MTK_EOF
+    2: MTK_EOL
+    3: MTK_ID
+    4: MTK_COLON
+    5: MCKW_SHOW
+    6: MCKW_SET
+    7: MTK_OPEQUAL
+    8: MCKW_EXEC
+    9: MSTR_LITERAL
+   10: MCKW_STOP
+   11: MTK_LBRACKET
+   12: MTK_RBRACKET
+   13: MTK_COMMA
+   14: MTK_REGISTER
+   15: MCKW_MEM
+   16: MTK_OPENP
+   17: MTK_CLOSEP
+   18: MKW_BYTE
+   19: MKW_HWORD
+   20: MKW_WORD
+   21: MCKW_HEX
+   22: MCKW_DEC
+   23: MCKW_SIGNED
+   24: MCKW_UNSIGNED
+   25: MCKW_BINARY
+   26: MTK_DEC_CONSTANT
+   27: MTK_OP_MINUS
+   28: MTK_HEX_CONSTANT
+   29: MTK_BIN_CONSTANT
+   30: error:
+   31: instruction: MTK_ID
+   32: command: MCKW_SHOW MCKW_SET MCKW_EXEC MCKW_STOP
+   33: statement: MTK_ID MCKW_SHOW MCKW_SET MCKW_EXEC MCKW_STOP
+   34: tagged_statement:
+   35: cmd_argument: MTK_REGISTER MCKW_MEM
+   36: argument: MTK_ID MTK_REGISTER MTK_DEC_CONSTANT MTK_OP_MINUS MTK_HEX_CONSTANT MTK_BIN_CONSTANT
+   37: data_format: MCKW_HEX MCKW_DEC MCKW_SIGNED MCKW_UNSIGNED MCKW_BINARY
+   38: opt_data_format: <lambda> MCKW_HEX MCKW_DEC MCKW_SIGNED MCKW_UNSIGNED MCKW_BINARY
+   39: opt_size_directive: <lambda> MKW_BYTE MKW_HWORD MKW_WORD
+   40: size_directive: MKW_BYTE MKW_HWORD MKW_WORD
+   41: constant: MTK_DEC_CONSTANT MTK_OP_MINUS MTK_HEX_CONSTANT MTK_BIN_CONSTANT
+   42: r_value: MTK_LBRACKET MTK_DEC_CONSTANT MTK_OP_MINUS MTK_HEX_CONSTANT MTK_BIN_CONSTANT
+   43: constant_list: MTK_DEC_CONSTANT MTK_OP_MINUS MTK_HEX_CONSTANT MTK_BIN_CONSTANT
+   44: opt_count: <lambda> MTK_LBRACKET
+   45: input: MTK_ID MCKW_SHOW MCKW_SET MCKW_EXEC MCKW_STOP
+   46: statements: MTK_ID MCKW_SHOW MCKW_SET MCKW_EXEC MCKW_STOP
