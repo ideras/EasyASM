@@ -706,7 +706,7 @@ IMPLEMENT_INSTRUCTION(Dec) {
     if (!arg->getReference(sim, ref1))
         return false;
 
-    if (!sim->doOperation(XFN_SUB, ref1, -1)) {
+    if (!sim->doOperation(XFN_SUB, ref1, 1)) {
         reportError("Invalid argument for operation.\n");
         return false;
     }
