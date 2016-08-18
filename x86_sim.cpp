@@ -270,8 +270,8 @@ bool X86Sim::parseFile(istream *in, XParserContext &ctx)
 
     tokenInfo = new TokenInfo;
     lexer.getTokenInfo(tokenInfo);
-    Parse(pParser, XTK_EOF, NULL, &ctx);
-    Parse(pParser, 0, NULL, &ctx);
+    Parse(pParser, XTK_EOF, tokenInfo, &ctx);
+    Parse(pParser, 0, tokenInfo, &ctx);
     ParseFree(pParser, free);
 
     tk_pool->freeAll();

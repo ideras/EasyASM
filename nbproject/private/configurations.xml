@@ -21,7 +21,6 @@
         <in>mips32_parser.cpp</in>
         <in>x86_parser.cpp</in>
       </df>
-      <in>execInstruction.c</in>
       <in>lempar.c</in>
       <in>lexer_common.cpp</in>
       <in>lexer_common.h</in>
@@ -38,6 +37,7 @@
       <in>mips32_tree.h</in>
       <in>parser_common.cpp</in>
       <in>parser_common.h</in>
+      <in>test_simple.asm</in>
       <in>util.cpp</in>
       <in>util.h</in>
       <in>x86_lexer.cpp</in>

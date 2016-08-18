@@ -95,19 +95,7 @@ int main(int argc, char *argv[])
     while (1) {
         line = readline(prompt);
 
-        if (line != NULL && *line == 0) {
-            free(line);
-            line = NULL;
-        }
-
-        if (line == NULL) {
-            if (lines.size() == 0) {
-                continue;
-            } else {
-                processLines(lines);
-				line_count = 1;
-            }
-        }
+		if (line == NULL) continue;
 
         if (strcmp(line, "exit") == 0 || strcmp(line, "quit") == 0) {
             break;
@@ -125,13 +113,18 @@ int main(int argc, char *argv[])
             prompt = buffer;
             continue;
         } else {
-            add_history(line);
+			if (*line != 0) {
+				add_history(line);
+				lines.push_back(string(line));
+			}
+			free(line);
 
-            lines.push_back(string(line));
-            prompt = prompt1;
-            processLines(lines);
-            lines.clear();
-			line_count = 1;
+			if (lines.size() > 0) {
+				prompt = prompt1;
+				processLines(lines);
+				lines.clear();
+				line_count = 1;
+			}
         }
     }
 
