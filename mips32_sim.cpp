@@ -222,7 +222,7 @@ int MIPS32Sim::readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_exte
     uint32_t word = mem[paddr / 4];
     result = (word & hwordMask) >> shift;
 
-    if (sign_extend)
+    if (sign_extend && (SIGN_BIT(result, 16) == 1))
         result |= 0xFFFF0000;
     
     return 1;
