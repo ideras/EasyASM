@@ -35,7 +35,7 @@ X86Sim::X86Sim()
 {
     gpr[R_ESP] = X_VIRTUAL_STACK_END_ADDR;
     stack_start_address = X_VIRTUAL_STACK_END_ADDR - (X_STACK_SIZE_WORDS * 4);
-	runtime_context = NULL;
+    runtime_context = NULL;
 }
 
 bool X86Sim::getRegValue(int regId, uint32_t &value)
@@ -237,7 +237,7 @@ bool X86Sim::parseFile(istream *in, XParserContext &ctx)
     int token;
     void* pParser = ParseAlloc (malloc);
     
-    tk_pool = &(ctx.tk_pool);
+    tk_pool = &(ctx.token_pool);
 
     while ((token = lexer.getNextToken()) == XTK_EOL);
 
@@ -362,7 +362,7 @@ bool X86Sim::exec(istream *in)
     
     
     old_rt_ctx = runtime_context;
-    xpool = &(parser_ctx.p_pool);
+    xpool = &(parser_ctx.parser_pool);
 
     runtime_context = NULL;
     
@@ -478,7 +478,10 @@ bool X86Sim::doOperation(unsigned char op, XReference &ref1, uint32_t value2)
         case XFN_CMP:
         case XFN_SUB: {
             result -= value2;
-            sign2 = !sign2;
+            
+            if (value2 != 0)
+                sign2 = !sign2;
+            
             break;
         }
         case XFN_IMUL: {

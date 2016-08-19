@@ -22,8 +22,6 @@
         <in>x86_parser.cpp</in>
       </df>
       <in>lempar.c</in>
-      <in>lexer_common.cpp</in>
-      <in>lexer_common.h</in>
       <in>main.cpp</in>
       <in>mempool.cpp</in>
       <in>mempool.h</in>
@@ -37,7 +35,6 @@
       <in>mips32_tree.h</in>
       <in>parser_common.cpp</in>
       <in>parser_common.h</in>
-      <in>test_simple.asm</in>
       <in>util.cpp</in>
       <in>util.h</in>
       <in>x86_lexer.cpp</in>
@@ -121,8 +118,6 @@
         <gdb_interceptlist>
           <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
         </gdb_interceptlist>
-        <gdb_signals>
-        </gdb_signals>
         <gdb_options>
           <DebugOptions>
           </DebugOptions>

@@ -321,8 +321,8 @@ bool MIPS32Sim::parseFile(istream *in, MParserContext &ctx)
 	MemPool *prev_pool = mparser_pool;
 	void* pParser = Mips32ParseAlloc (malloc);
     
-    tk_pool = &(ctx.tk_pool);
-	mparser_pool = &(ctx.p_pool);
+    tk_pool = &(ctx.token_pool);
+	mparser_pool = &(ctx.parser_pool);
 
     while ((token = lexer.getNextToken()) == MTK_EOL);
 

@@ -49,21 +49,21 @@ struct ParserContext {
     }
     
     ~ParserContext() {
-        tk_pool.freeAll();
-        p_pool.freeAll();
+        token_pool.freeAll();
+        parser_pool.freeAll();
         input_list.clear();
     }
     
     void init() {
         input_list.clear();
-        tk_pool.freeAll();
-        p_pool.freeAll();
+        token_pool.freeAll();
+        parser_pool.freeAll();
         error = 0;
     }
     
     list<T *> input_list;
-    MemPool tk_pool;
-    MemPool p_pool;
+    MemPool token_pool;
+    MemPool parser_pool;
     int error;
 };
 

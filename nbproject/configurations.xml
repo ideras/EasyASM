@@ -10,8 +10,6 @@
         <in>mips32_parser.cpp</in>
         <in>x86_parser.cpp</in>
       </df>
-      <in>lexer_common.cpp</in>
-      <in>lexer_common.h</in>
       <in>main.cpp</in>
       <in>mempool.cpp</in>
       <in>mips32_lexer.cpp</in>
@@ -72,10 +70,6 @@
       </item>
       <item path="generated/x86_parser.cpp" ex="false" tool="1" flavor2="4">
       </item>
-      <item path="lexer_common.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="lexer_common.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="mempool.cpp" ex="false" tool="1" flavor2="4">
@@ -123,8 +117,6 @@
       <item path="generated/mips32_parser.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="generated/x86_parser.cpp" ex="false" tool="1" flavor2="4">
-      </item>
-      <item path="lexer_common.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="4">
       </item>

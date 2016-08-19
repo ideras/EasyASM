@@ -9,6 +9,7 @@ class MemPool
 {
 public:
     MemPool();
+    ~MemPool() { freeAll(); }
 
     void *memAlloc(std::size_t size);
     void memFree(void *ptrb);
