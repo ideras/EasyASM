@@ -1,5 +1,0 @@
-mov 
-eax ebx ecx edx esi edi esp ebp 
-ax bx cx dx
-al ah bl bh cl ch dl dh
-0xAABBCCDD 19878 0b0101010010 jmp jl jz je byte ptr
