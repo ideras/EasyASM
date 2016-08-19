@@ -170,7 +170,7 @@ int MIPS32Sim::readWord(unsigned int vaddr, uint32_t &result)
     return 1;
 }
 
-int MIPS32Sim::readByte(unsigned int vaddr, uint32_t &result, int sign_extend)
+int MIPS32Sim::readByte(unsigned int vaddr, uint32_t &result, bool sign_extend)
 {
     uint32_t paddr;
 
@@ -178,7 +178,7 @@ int MIPS32Sim::readByte(unsigned int vaddr, uint32_t &result, int sign_extend)
         return 0;
     
     uint32_t byteToRead = vaddr % 4;
-    uint32_t byteMask, signMask;
+    uint32_t byteMask;
     
     //This assumes Big Endian order
     switch (byteToRead) {
@@ -188,18 +188,17 @@ int MIPS32Sim::readByte(unsigned int vaddr, uint32_t &result, int sign_extend)
         case 3: byteMask = 0x000000FF; break;
     }
 
-    signMask = 0xFFFFFF00;
     int shift = (3 - byteToRead) * 8;
     result = (mem[paddr / 4] & byteMask) >> shift;
 
     if (sign_extend && ((result & (1 << 7))!=0))
-        result |= signMask;
+        result |= 0xFFFFFF00;
 
     return 1;
 
 }
 
-int MIPS32Sim::readHalfWord(unsigned int vaddr, uint32_t &result)
+int MIPS32Sim::readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_extend)
 {
     uint32_t paddr;
 
@@ -223,6 +222,9 @@ int MIPS32Sim::readHalfWord(unsigned int vaddr, uint32_t &result)
     uint32_t word = mem[paddr / 4];
     result = (word & hwordMask) >> shift;
 
+    if (sign_extend)
+        result |= 0xFFFF0000;
+    
     return 1;
 }
 
@@ -734,7 +736,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
         {
             unsigned int vaddr = *p1 + imm;
             uint32_t result;
-            if (!readByte(vaddr, result, 1)) {
+            if (!readByte(vaddr, result, true)) {
                 reportError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
             } else {
                 *p0 = result;
@@ -746,20 +748,38 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             unsigned int vaddr = *p1 + imm;
             uint32_t result;
             
-            if (!readByte(vaddr, result, 0)) {
-                reportError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+            if (!readByte(vaddr, result, false)) {
+                reportError("Invalid virtual address '%08X'\n", vaddr);
             } else {
                 *p0 = result;
             }
             break;
         }
         case FN_LH: // lh rt, immediate(rs) ; I Format
+        {
+            unsigned int vaddr = *p1 + imm;
+            uint32_t result;
+            if (!readHalfWord(vaddr, result, true)) {
+                reportError("Invalid virtual address '%08X'\n", vaddr);
+            } else {
+                *p0 = result;
+            }
             break;
+        }
         case FN_ORI: // ori rt,rs,immediate ; I Format
             *p0 = *p1 | (imm & 0xFFFF);
             break;
         case FN_LHU: // lhu rt, immediate(rs) ; I Format
+        {
+            unsigned int vaddr = *p1 + imm;
+            uint32_t result;
+            if (!readHalfWord(vaddr, result, false)) {
+                reportError("Invalid virtual address '%08X'\n", vaddr);
+            } else {
+                *p0 = result;
+            }
             break;
+        }
         case FN_XORI: // xori rt,rs,immediate ; I Format
             *p0 = *p1 ^ (imm & 0xFFFF);
             break;

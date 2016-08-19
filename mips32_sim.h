@@ -168,8 +168,8 @@ public:
     MIPS32Sim();
     
     int readWord(unsigned int vaddr, uint32_t &result);
-    int readHalfWord(unsigned int vaddr, uint32_t &result);
-    int readByte(unsigned int vaddr, uint32_t &result, int sign_extend);
+    int readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_extend);
+    int readByte(unsigned int vaddr, uint32_t &result, bool sign_extend);
     int writeWord(unsigned int vaddr, uint32_t value);
     int writeHalfWord(unsigned int vaddr, uint16_t value);
     int writeByte(unsigned int vaddr, uint8_t value);

@@ -59,7 +59,7 @@ bool MCmd_Show::exec(MIPS32Sim *sim)
                     break;
                 }
                 case MSD_HWord: {
-                    if (!sim->readHalfWord(address, value))
+                    if (!sim->readHalfWord(address, value, false))
                         return false;
 
                     printf("half word [0x%X] ", address);
