@@ -441,7 +441,9 @@ void X86Sim::updateFlags(uint8_t op, uint8_t sign1, uint8_t sign2, uint32_t arg1
 
         //Update overflow flag
         //if (ARITH_OVFL(result, arg1, arg2, bitSize))
-		if ( (sign1 == sign2) && (sign1 != SIGN_BIT (result, bitSize)) )
+        unsigned char result_sign = SIGN_BIT (result, bitSize) != 0;
+        
+	if ( (sign1 == sign2) && (sign1 != result_sign) )
             eflags |= OF_MASK;
     }
 
