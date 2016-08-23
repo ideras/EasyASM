@@ -54,6 +54,35 @@ void processLines(list<string> &lines)
         msim.exec(&in);
     } else {
         xsim.exec(&in);
+        
+        if (lines.size() == 1) {
+            XReference result;
+            uint32_t value, svalue;
+            
+            result = xsim.getLastResult();
+            switch (result.type) {
+                case RT_Reg: {
+                    int regId = result.address;
+
+                    xsim.getRegValue(regId, value);
+                    svalue = (result.bitSize < BS_32)? signExtend(value, result.bitSize, BS_32) : value;
+
+                    printf("%s = 0x%X %d %u\n", xreg[regId], value, (int)svalue, value);
+                    break;
+                }
+                case RT_Mem: {
+                    uint32_t value;
+
+                    xsim.readMem(result.address, value, result.bitSize);
+                    svalue = signExtend(value, result.bitSize, BS_32);
+
+                    printf("%s [0x%X] = 0x%X %d %u\n", X86Sim::sizeDirectiveToString(result.bitSize), result.address, value, (int)svalue, value);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
     }
 }
 

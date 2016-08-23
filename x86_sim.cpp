@@ -21,16 +21,6 @@ void *ParseAlloc(void *(*mallocProc)(size_t));
 void ParseFree(void *p, void (*freeProc)(void*));
 void Parse(void *yyp, int yymajor, TokenInfo *yyminor, XParserContext *ctx);
 
-inline const char *sizeDirectiveToString(XSizeDirective sd) {
-    switch (sd) {
-        case SD_BytePtr: return "byte";
-        case SD_WordPtr: return "word";
-        case SD_DWordPtr: return "dword";
-        default:
-            return "";
-    }
-}
-
 X86Sim::X86Sim()
 {
     gpr[R_ESP] = X_VIRTUAL_STACK_END_ADDR;
@@ -114,16 +104,12 @@ bool X86Sim::setValue(XReference &ref, uint32_t value)
 {
     switch (ref.type) {
         case RT_Reg:
-            setRegValue(ref.address, value);
-            break;
+            return setRegValue(ref.address, value);
         case RT_Mem:
-            writeMem(ref.address, value, ref.bitSize);
-            break;
+            return writeMem(ref.address, value, ref.bitSize);
         default:
             return false;
     }
-
-    return true;
 }
 
 bool X86Sim::showRegValue(int regId, PrintFormat format)
@@ -209,6 +195,8 @@ bool X86Sim::writeMem(uint32_t vaddr, uint32_t value, XBitSize bitSize)
             *((uint32_t *)pmem) = value;
             break;
         }
+        default:
+            return false;
     }
 
     return true;
@@ -382,7 +370,6 @@ bool X86Sim::exec(istream *in)
     
     bool result = true;
     int count = vinst.size();
-    XReference ref;
     
     rt_ctx.ip = 0;
     rt_ctx.stop = false;
@@ -391,7 +378,7 @@ bool X86Sim::exec(istream *in)
         
         rt_ctx.line = inst->line;
         rt_ctx.ip ++;
-        if (!inst->exec(this, ref)) {
+        if (!inst->exec(this, last_result)) {
             result = false;
             break;
         }

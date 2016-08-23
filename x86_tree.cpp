@@ -324,6 +324,8 @@ IMPLEMENT_INSTRUCTION(Mov) {
         return false;
     }
 
+    if (ref1.bitSize == 0) ref1.bitSize = BS_32;
+    
     result = ref1;
 
     return sim->setValue(ref1, value2);

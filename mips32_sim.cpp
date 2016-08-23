@@ -491,7 +491,7 @@ bool MIPS32Sim::exec(istream *in)
     while (1) {
         MInstruction *inst = vinst[ctx.pc];
         
-		ctx.line = inst->line;
+	ctx.line = inst->line;
         if (!execInstruction(inst, ctx)) {
             result = false;
 			break;
@@ -837,7 +837,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
     
     value = reg[rd];
     
-	if (!ctx.silent_mode) {
+    if (!ctx.silent_mode) {
         printf("%s = %d %u 0x%X\n", mips32_getRegisterName(rd), (int)value, value, value);
     }
 

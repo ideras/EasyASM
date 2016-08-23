@@ -1,9 +1,10 @@
 ; Factorial implementation
 ; This code was generated with gcc using no optimization
   
-  mov eax, 5
+  mov eax, 7
   push eax
   call fact
+  add esp, 4
   #show eax
   #stop
   

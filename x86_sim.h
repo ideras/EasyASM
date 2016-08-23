@@ -86,7 +86,7 @@ struct XRtContext
 {
     XRtContext() {
         ip = 0;
-		line = 0;
+        line = 0;
         stop = false;
     }
     
@@ -105,6 +105,7 @@ private:
 public:
     X86Sim();
 
+    XReference getLastResult() { return last_result; }
     int getSourceLine() { return runtime_context->line; }
     bool getRegValue(int regId, uint32_t &value);
     bool setRegValue(int regId, uint32_t value);
@@ -120,11 +121,22 @@ public:
     bool showRegValue(int regId, PrintFormat format);
     bool showMemValue(uint32_t vaddr, XBitSize bitSize, PrintFormat format);
     void showFlags();
+    
+    static inline const char *sizeDirectiveToString(XSizeDirective sd) {
+        switch (sd) {
+            case SD_BytePtr: return "byte";
+            case SD_WordPtr: return "word";
+            case SD_DWordPtr: return "dword";
+            default:
+                return "";
+        }
+    }
 
 public:
     XRtContext *runtime_context;
     
 private:
+    XReference last_result;
     uint8_t *getMemPtr(uint32_t vaddr);
     bool hasEvenParity(uint8_t value);
 
