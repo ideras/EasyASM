@@ -79,6 +79,7 @@ void processLines(list<string> &lines)
                     printf("%s [0x%X] = 0x%X %d %u\n", X86Sim::sizeDirectiveToString(result.bitSize), result.address, value, (int)svalue, value);
                     break;
                 }
+
                 default:
                     break;
             }

@@ -203,8 +203,13 @@ public:
     int getKind() { return XARG_IDENTIFIER; }
     string toString() { return name; }
 
-    bool eval(X86Sim *, int , uint8_t, uint32_t &) {
-        return false;
+    bool eval(X86Sim *xsim, int resultSize, uint8_t flags, uint32_t &result) {
+        if (!xsim->getLabel(name, result)) {
+            reportError("Invalid label '%s'\n", name.c_str());
+            return false;
+        }
+        else 
+            return true;
     }
 
     bool getReference(X86Sim *, XReference &) { return false; }

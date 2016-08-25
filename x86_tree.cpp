@@ -752,15 +752,16 @@ IMPLEMENT_INSTRUCTION(Neg) {
 
 IMPLEMENT_INSTRUCTION(Jmp) {
     UNUSED(result);
-
-    if (arg->getKind() != XARG_CONST) {
-        reportError("Invalid argument for 'jmp' instruction.  Expected address, found '%s'.\n", 
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for jump instruction. Expected register, memory reference, label or constant, found '%s'.\n",
                     arg->toString().c_str());
-        
         return false;
     }
     
-    sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+    sim->runtime_context->ip = target_addr;
 
     return true;
 }
@@ -768,16 +769,23 @@ IMPLEMENT_INSTRUCTION(Jmp) {
 IMPLEMENT_INSTRUCTION(Jz) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
-        reportError("Invalid argument for 'JZ' instruction.  Expected address, found '%s'.\n", 
-                    
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
-    XArgIdentifier *id = (XArgIdentifier *)arg;
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+                    arg->toString().c_str());
+        return false;
+    }
 
     if (sim->isFlagSet(ZF_MASK)) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Jump to label is not taken. Zero flag is not set
     }
@@ -788,15 +796,23 @@ IMPLEMENT_INSTRUCTION(Jz) {
 IMPLEMENT_INSTRUCTION(Jnz) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
         reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
-                    
+                    arg->toString().c_str());
+        return false;
+    }
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
     
     if (!sim->isFlagSet(ZF_MASK)) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Branch is not taken. Zero flag is set
     }
@@ -807,9 +823,17 @@ IMPLEMENT_INSTRUCTION(Jnz) {
 IMPLEMENT_INSTRUCTION(Jl) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
         reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
-                    
+                    arg->toString().c_str());
+        return false;
+    }
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -818,7 +842,7 @@ IMPLEMENT_INSTRUCTION(Jl) {
     bool of = sim->isFlagSet(OF_MASK);
 
     if (sf != of) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Branch to label is not taken. Sign flag is equal to overflow flag.
     }
@@ -829,18 +853,27 @@ IMPLEMENT_INSTRUCTION(Jl) {
 IMPLEMENT_INSTRUCTION(Jg) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
         reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
-                    
                     arg->toString().c_str());
         return false;
     }
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+                    arg->toString().c_str());
+        return false;
+    }
+    
     bool sf = sim->isFlagSet(SF_MASK);
     bool of = sim->isFlagSet(OF_MASK);
     bool zf = sim->isFlagSet(ZF_MASK);
 
     if ((sf == of) && !zf) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Branch to label is not taken. Sign flag is not equal to overflow flag or zero flag is set.
     }
@@ -851,10 +884,18 @@ IMPLEMENT_INSTRUCTION(Jg) {
 IMPLEMENT_INSTRUCTION(Jle) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
         reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
-
+        return false;
+    }
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+                    arg->toString().c_str());
         return false;
     }
 
@@ -863,7 +904,7 @@ IMPLEMENT_INSTRUCTION(Jle) {
     bool zf = sim->isFlagSet(ZF_MASK);
 
     if ((sf != of) || zf) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Branch to label is not taken. Sign flag is equal to overflow flag and Zero flag is not set.
     }
@@ -874,10 +915,18 @@ IMPLEMENT_INSTRUCTION(Jle) {
 IMPLEMENT_INSTRUCTION(Jge) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
         reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
-
+        return false;
+    }
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+                    arg->toString().c_str());
         return false;
     }
 
@@ -885,7 +934,7 @@ IMPLEMENT_INSTRUCTION(Jge) {
     bool of = sim->isFlagSet(OF_MASK);
 
     if (sf == of) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Branch to label is not taken. Sign flag is not equal to overflow flag.
     }
@@ -896,9 +945,17 @@ IMPLEMENT_INSTRUCTION(Jge) {
 IMPLEMENT_INSTRUCTION(Jb) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
         reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
-                    
+                    arg->toString().c_str());
+        return false;
+    }
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -906,7 +963,7 @@ IMPLEMENT_INSTRUCTION(Jb) {
     bool carry_flag = sim->isFlagSet(CF_MASK);
 
     if (carry_flag) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Branch to label is not taken. Carry flag is not set.
     }
@@ -917,10 +974,18 @@ IMPLEMENT_INSTRUCTION(Jb) {
 IMPLEMENT_INSTRUCTION(Ja) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
         reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
-
+        return false;
+    }
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+                    arg->toString().c_str());
         return false;
     }
 
@@ -928,7 +993,7 @@ IMPLEMENT_INSTRUCTION(Ja) {
     bool zero_flag = sim->isFlagSet(ZF_MASK);
 
     if (!carry_flag && !zero_flag) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Branch to label is not taken. Carry flag is set or zero flag is set.
     }
@@ -939,10 +1004,18 @@ IMPLEMENT_INSTRUCTION(Ja) {
 IMPLEMENT_INSTRUCTION(Jbe) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
         reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
-
+        return false;
+    }
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+                    arg->toString().c_str());
         return false;
     }
 
@@ -950,7 +1023,7 @@ IMPLEMENT_INSTRUCTION(Jbe) {
     bool zero_flag = sim->isFlagSet(ZF_MASK);
 
     if (carry_flag || zero_flag) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Branch to label is not taken. Carry flag is not set and zero flag is not set.
     }
@@ -961,7 +1034,16 @@ IMPLEMENT_INSTRUCTION(Jbe) {
 IMPLEMENT_INSTRUCTION(Jae) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    if (arg->getKind() != XARG_CONST &&
+        arg->getKind() != XARG_IDENTIFIER) {
+        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+                    arg->toString().c_str());
+        return false;
+    }
+    
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
         reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
@@ -970,7 +1052,7 @@ IMPLEMENT_INSTRUCTION(Jae) {
     bool carry_flag = sim->isFlagSet(CF_MASK);
 
     if (!carry_flag) {
-        sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+        sim->runtime_context->ip = target_addr;
     } else {
         //Branch to label is not taken. Carry flag is set.
     }
@@ -981,7 +1063,9 @@ IMPLEMENT_INSTRUCTION(Jae) {
 IMPLEMENT_INSTRUCTION(Call) {
     UNUSED(result);
 
-    if (arg->getKind() != XARG_CONST) {
+    uint32_t target_addr;
+    
+    if (!arg->eval(sim, BS_32, 0, target_addr)) {
         reportError("Invalid argument for call instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
@@ -998,7 +1082,7 @@ IMPLEMENT_INSTRUCTION(Call) {
     }
     sim->setRegValue(R_ESP, esp);
     
-    sim->runtime_context->ip = ((XArgConstant *)arg)->value;
+    sim->runtime_context->ip = target_addr;
 
     return true;
 }

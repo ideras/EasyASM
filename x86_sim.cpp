@@ -26,6 +26,7 @@ X86Sim::X86Sim()
     gpr[R_ESP] = X_VIRTUAL_STACK_END_ADDR;
     stack_start_address = X_VIRTUAL_STACK_END_ADDR - (X_STACK_SIZE_WORDS * 4);
     runtime_context = NULL;
+    label_map = NULL;
 }
 
 bool X86Sim::getRegValue(int regId, uint32_t &value)
@@ -271,10 +272,9 @@ bool X86Sim::parseFile(istream *in, XParserContext &ctx)
     return true;
 }
 
-bool X86Sim::resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &vinst)
+bool X86Sim::resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &vinst, map<string, uint32_t> &lbl_map)
 {
     list<XInstruction *>::iterator it = linst.begin();
-    map<string, int> lbl_map;
     int index = 0;
     
     while (it != linst.end()) {
@@ -298,7 +298,7 @@ bool X86Sim::resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &
         it++;
     }
     
-    vector<XInstruction *>::iterator it_inst = vinst.begin();
+    /*vector<XInstruction *>::iterator it_inst = vinst.begin();
     
     while (it_inst != vinst.end()) {
         XInstruction *inst = *it_inst;
@@ -338,7 +338,7 @@ bool X86Sim::resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &
         }
         
         it_inst ++;
-    }
+    }*/
     
     return true;
 }
@@ -360,16 +360,20 @@ bool X86Sim::exec(istream *in)
     }
     
     vector<XInstruction *> vinst;
+    map<string, uint32_t> lbl_map, *old_label_map;
     
     runtime_context = &rt_ctx;
     
-    if (!resolveLabels(parser_ctx.input_list, vinst)) {
+    if (!resolveLabels(parser_ctx.input_list, vinst, lbl_map)) {
         runtime_context = old_rt_ctx;
         return false;
     }
     
     bool result = true;
     int count = vinst.size();
+    
+    old_label_map = label_map;
+    label_map = &lbl_map;
     
     rt_ctx.ip = 0;
     rt_ctx.stop = false;
@@ -388,6 +392,7 @@ bool X86Sim::exec(istream *in)
     }
     
     runtime_context = old_rt_ctx;
+    label_map = old_label_map;
     
     return result;
 }

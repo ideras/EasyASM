@@ -5,6 +5,7 @@
 #include <fstream>
 #include <list>
 #include <vector>
+#include <map>
 #include "util.h"
 #include "x86_lexer.h"
 
@@ -99,7 +100,7 @@ class X86Sim
 {    
 private:
     bool parseFile(istream *in, XParserContext &ctx);
-    bool resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &vinst);
+    bool resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &vinst, map<string, uint32_t> &lbl_map);
     bool translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr);
 
 public:
@@ -107,6 +108,20 @@ public:
 
     XReference getLastResult() { return last_result; }
     int getSourceLine() { return runtime_context->line; }
+    
+    bool getLabel(string label, uint32_t &target) { 
+        if (label_map != NULL) {
+            if (label_map->find(label) != label_map->end()) {
+                target = label_map->at(label);
+                return true;
+            } else {
+                return false;
+            }
+        }
+        
+        return false;
+    }
+    
     bool getRegValue(int regId, uint32_t &value);
     bool setRegValue(int regId, uint32_t value);
     bool getValue(XReference &ref);
@@ -134,6 +149,7 @@ public:
 
 public:
     XRtContext *runtime_context;
+    map<string, uint32_t> *label_map;
     
 private:
     XReference last_result;
