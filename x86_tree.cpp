@@ -57,6 +57,27 @@ void XNode::operator delete(void *ptrb)
         return true;                                            \
     }
 
+#define SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref) \
+    do {    \
+        if (arg->getKind() != XARG_MEMREF &&        \
+            arg->getKind() != XARG_REGISTER) {      \
+            reportError("Invalid argument '%s' for instruction '%s'\n", \
+                        arg->toString().c_str(),    \
+                        this->getName());   \
+            return false;   \
+        }   \
+            \
+        if (!arg->getReference(sim, a_ref)) {   \
+            return false;   \
+        }   \
+            \
+        if (a_ref.bitSize != BS_8) {    \
+            reportError("Invalid operand size in instruction '%s'\n", this->getName()); \
+            return false;   \
+        }   \
+    } while (0)
+
+
 /* XArgument 'eval' method implementation */
 bool XArgRegister::eval(X86Sim *xsim, int resultSize, uint8_t flags, uint32_t &result)
 {
@@ -1103,6 +1124,252 @@ IMPLEMENT_INSTRUCTION(Ret) {
     sim->runtime_context->ip = ret_ip;
     
     return true;
+}
+
+//SETNBE r/m8       Set byte if not below or equal (CF=0 and ZF=0).
+//SETA   r/m8         Set byte if above (CF=0 and ZF=0).
+IMPLEMENT_INSTRUCTION(Seta) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool cf = sim->isFlagSet(CF_MASK);
+    bool zf = sim->isFlagSet(ZF_MASK);
+    
+    if (!sim->setValue(a_ref, (!cf && !zf)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }
+}
+
+//SETNC r/m8    Set byte if not carry (CF=0).
+//SETNB r/m8    Set byte if not below (CF=0).
+//SETAE r/m8    Set byte if above or equal (CF=0).
+IMPLEMENT_INSTRUCTION(Setae) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool cf = sim->isFlagSet(CF_MASK);
+    
+    if (!sim->setValue(a_ref, (!cf)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }
+}
+
+//SETNA r/m8    Set byte if not above (CF=1 or ZF=1).
+//SETBE r/m8    Set byte if below or equal (CF=1 or ZF=1).
+IMPLEMENT_INSTRUCTION(Setbe) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool cf = sim->isFlagSet(CF_MASK);
+    bool zf = sim->isFlagSet(ZF_MASK);
+    
+    if (!sim->setValue(a_ref, (cf || zf)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }
+}
+
+//SETNAE r/m8    Set byte if not above or equal (CF=1).
+//SETB r/m8    Set byte if below (CF=1).
+//SETC r/m8    Set if carry (CF=1).
+IMPLEMENT_INSTRUCTION(Setb) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+    
+    bool cf = sim->isFlagSet(CF_MASK);
+    
+    if (!sim->setValue(a_ref, cf? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }
+}
+
+//SETNLE r/m8    Set byte if not less or equal (ZF=0 and SF=OF).
+//SETG   r/m8    Set byte if greater (ZF=0 and SF=OF).
+IMPLEMENT_INSTRUCTION(Setg) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool zf = sim->isFlagSet(ZF_MASK);
+    bool sf = sim->isFlagSet(SF_MASK);
+    bool of = sim->isFlagSet(OF_MASK);
+    
+    if (!sim->setValue(a_ref, (!zf && sf == of)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }
+}
+
+//SETNL r/m8    Set byte if not less (SF=OF).
+//SETGE r/m8    Set byte if greater or equal (SF=OF).
+IMPLEMENT_INSTRUCTION(Setge) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool sf = sim->isFlagSet(SF_MASK);
+    bool of = sim->isFlagSet(OF_MASK);
+    
+    if (!sim->setValue(a_ref, (sf == of)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }
+}
+
+//SETNGE r/m8    Set if not greater or equal (SF<>OF).
+//SETL   r/m8    Set byte if less (SF<>OF).
+IMPLEMENT_INSTRUCTION(Setl) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool sf = sim->isFlagSet(SF_MASK);
+    bool of = sim->isFlagSet(OF_MASK);
+    
+    if (!sim->setValue(a_ref, (sf != of)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }
+}
+
+//SETNG r/m8    Set byte if not greater (ZF=1 or SF<>OF).
+//SETLE r/m8    Set byte if less or equal (ZF=1 or SF<>OF).
+IMPLEMENT_INSTRUCTION(Setle) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool zf = sim->isFlagSet(ZF_MASK);
+    bool sf = sim->isFlagSet(SF_MASK);
+    bool of = sim->isFlagSet(OF_MASK);
+    
+    if (!sim->setValue(a_ref, (zf && sf != of)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }
+}
+
+//SETNZ r/m8    Set byte if not zero (ZF=0).
+//SETNE r/m8    Set byte if not equal (ZF=0).
+IMPLEMENT_INSTRUCTION(Setnz) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool zf = sim->isFlagSet(ZF_MASK);
+
+    if (!sim->setValue(a_ref, (!zf)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }    
+}
+
+//SETNO r/m8    Set byte if not overflow (OF=0).
+IMPLEMENT_INSTRUCTION(Setno) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool of = sim->isFlagSet(OF_MASK);
+
+    if (!sim->setValue(a_ref, (!of)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }    
+}
+
+//SETPO r/m8    Set byte if parity odd (PF=0).
+//SETNP r/m8    Set byte if not parity (PF=0).
+IMPLEMENT_INSTRUCTION(Setnp) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool pf = sim->isFlagSet(PF_MASK);
+
+    if (!sim->setValue(a_ref, (!pf)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }     
+}
+
+//SETNS r/m8    Set byte if not sign (SF=0).
+IMPLEMENT_INSTRUCTION(Setns) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool sf = sim->isFlagSet(SF_MASK);
+
+    if (!sim->setValue(a_ref, (!sf)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }     
+}
+
+//SETO r/m8    Set byte if overflow (OF=1).
+IMPLEMENT_INSTRUCTION(Seto) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool of = sim->isFlagSet(OF_MASK);
+
+    if (!sim->setValue(a_ref, (of)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    } 
+}
+
+//SETPE r/m8    Set byte if parity even (PF=1).
+//SETP r/m8    Set byte if parity (PF=1).
+IMPLEMENT_INSTRUCTION(Setp) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+    
+    bool pf = sim->isFlagSet(PF_MASK);
+
+    if (!sim->setValue(a_ref, (pf)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }  
+}
+
+//SETS r/m8    Set byte if sign (SF=1).
+IMPLEMENT_INSTRUCTION(Sets) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool sf = sim->isFlagSet(SF_MASK);
+    
+    if (!sim->setValue(a_ref, (sf)? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }     
+}
+
+//SETE r/m8    Set byte if equal (ZF=1).
+//SETZ r/m8    Set byte if zero (ZF=1). 
+IMPLEMENT_INSTRUCTION(Setz) {
+    XReference a_ref;
+
+    SET_BYTE_ON_CONDITION_INST_PROLOG(a_ref);
+
+    bool zf = sim->isFlagSet(ZF_MASK);
+    
+    if (!sim->setValue(a_ref, zf? 1 : 0)) {
+        reportError("Unknown error on instruction '%s'\n", getName());
+        return false;
+    }
 }
 
 IMPLEMENT_INSTRUCTION(Cdq) {

@@ -141,6 +141,36 @@ instruction(R) ::= XKW_JA(N) argument(A1).                             { R = new
 instruction(R) ::= XKW_JNBE(N) argument(A1).                           { R = new XI_Ja(A1); R->line = N->line; }
 instruction(R) ::= XKW_CALL(N) argument(A1).                           { R = new XI_Call(A1); R->line = N->line; }
 instruction(R) ::= XKW_RET(N) opt_argument(A1).                        { R = new XI_Ret(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETA(N) argument(A1).    { R = new XI_Seta(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETAE(N) argument(A1).   { R = new XI_Setae(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETB(N) argument(A1).    { R = new XI_Setb(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETBE(N) argument(A1).   { R = new XI_Setbe(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETC(N) argument(A1).    { R = new XI_Setc(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETE(N) argument(A1).    { R = new XI_Sete(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETG(N) argument(A1).    { R = new XI_Setg(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETGE(N) argument(A1).   { R = new XI_Setge(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETL(N) argument(A1).    { R = new XI_Setl(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETLE(N) argument(A1).   { R = new XI_Setle(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNA(N) argument(A1).   { R = new XI_Setna(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNAE(N) argument(A1).  { R = new XI_Setnae(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNB(N) argument(A1).   { R = new XI_Setnb(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNBE(N) argument(A1).  { R = new XI_Setnbe(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNC(N) argument(A1).   { R = new XI_Setnc(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNE(N) argument(A1).   { R = new XI_Setne(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNG(N) argument(A1).   { R = new XI_Setng(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNGE(N) argument(A1).  { R = new XI_Setnge(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNL(N) argument(A1).   { R = new XI_Setnl(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNLE(N) argument(A1).  { R = new XI_Setnle(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNO(N) argument(A1).   { R = new XI_Setno(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNP(N) argument(A1).   { R = new XI_Setnp(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNS(N) argument(A1).   { R = new XI_Setns(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETNZ(N) argument(A1).   { R = new XI_Setnz(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETO(N) argument(A1).    { R = new XI_Seto(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETP(N) argument(A1).    { R = new XI_Setp(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETPE(N) argument(A1).   { R = new XI_Setpe(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETPO(N) argument(A1).   { R = new XI_Setpo(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETS(N) argument(A1).    { R = new XI_Sets(A1); R->line = N->line; }
+instruction(R) ::= XKW_SETZ(N) argument(A1).    { R = new XI_Setz(A1); R->line = N->line; }
 instruction(R) ::= XKW_CDQ(N).                                         { R = new XI_Cdq(); R->line = N->line; }
 
 opt_argument(R) ::= argument(A). { R = A; }

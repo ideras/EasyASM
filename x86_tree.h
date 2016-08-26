@@ -94,6 +94,36 @@ void reportError(const char *format, ...);
 #define XINST_Cdq        36
 #define XINST_Mul        37
 #define XINST_Div        38
+#define XINST_Seta       39
+#define XINST_Setae      40
+#define XINST_Setb       41
+#define XINST_Setbe      42
+#define XINST_Setc       43
+#define XINST_Sete       44
+#define XINST_Setg       45
+#define XINST_Setge      46
+#define XINST_Setl       47
+#define XINST_Setle      48
+#define XINST_Setna      49
+#define XINST_Setnae     50
+#define XINST_Setnb      51
+#define XINST_Setnbe     52
+#define XINST_Setnc      53
+#define XINST_Setne      54
+#define XINST_Setng      55
+#define XINST_Setnge     56
+#define XINST_Setnl      57
+#define XINST_Setnle     58
+#define XINST_Setno      59
+#define XINST_Setnp      60
+#define XINST_Setns      61
+#define XINST_Setnz      62
+#define XINST_Seto       63
+#define XINST_Setp       64
+#define XINST_Setpe      65
+#define XINST_Setpo      66
+#define XINST_Sets       67
+#define XINST_Setz       68
 
 #define XINST_Tagged     899
 #define XCMD_Show        900
@@ -552,6 +582,38 @@ DEFINE_INSTRUCTION_1ARG("jbe", Jbe);
 DEFINE_INSTRUCTION_1ARG("jae", Jae);
 DEFINE_INSTRUCTION_1ARG("call", Call);
 DEFINE_INSTRUCTION_1ARG("ret", Ret);
+
+#define XI_Setnbe   XI_Seta
+#define XI_Setnc    XI_Setae
+#define XI_Setnb    XI_Setae
+#define XI_Setna    XI_Setbe
+#define XI_Setnae   XI_Setb
+#define XI_Setc     XI_Setb
+#define XI_Setnle   XI_Setg
+#define XI_Setnl    XI_Setge
+#define XI_Setnge   XI_Setl
+#define XI_Setng    XI_Setle
+#define XI_Setne    XI_Setnz
+#define XI_Setpo    XI_Setnp
+#define XI_Setpe    XI_Setp
+#define XI_Sete     XI_Setz
+
+DEFINE_INSTRUCTION_1ARG("seta", Seta);
+DEFINE_INSTRUCTION_1ARG("setae", Setae);
+DEFINE_INSTRUCTION_1ARG("setb", Setb);
+DEFINE_INSTRUCTION_1ARG("setbe", Setbe);
+DEFINE_INSTRUCTION_1ARG("setg", Setg);
+DEFINE_INSTRUCTION_1ARG("setge", Setge);
+DEFINE_INSTRUCTION_1ARG("setl", Setl);
+DEFINE_INSTRUCTION_1ARG("setle", Setle);
+DEFINE_INSTRUCTION_1ARG("setno", Setno);
+DEFINE_INSTRUCTION_1ARG("setnp", Setnp);
+DEFINE_INSTRUCTION_1ARG("setns", Setns);
+DEFINE_INSTRUCTION_1ARG("setnz", Setnz);
+DEFINE_INSTRUCTION_1ARG("seto", Seto);
+DEFINE_INSTRUCTION_1ARG("setp", Setp);
+DEFINE_INSTRUCTION_1ARG("sets", Sets);
+DEFINE_INSTRUCTION_1ARG("setz", Setz);
 
 DEFINE_INSTRUCTION_0ARG("cdq", Cdq);
 
