@@ -572,29 +572,30 @@ IMPLEMENT_INSTRUCTION(Shr) {
 }
 
 IMPLEMENT_INSTRUCTION(Leave) {
-    UNUSED(sim);
     UNUSED(result);
 
-    string mov_esp_ebp = "mov esp, ebp";
-    string pop_ebp = "pop ebp";
+    uint32_t ebp_value;
+    sim->getRegValue(R_EBP,ebp_value);
+    sim->setRegValue(R_ESP,ebp_value);
 
-    list<string> lines;
+    uint32_t esp, value;
 
-    lines.push_back(mov_esp_ebp);
-    lines.push_back(pop_ebp);
+    sim->getRegValue(R_ESP,esp);
 
-    list<string>::iterator it = lines.begin();
-    stringstream in;
-
-    while (it != lines.end()) {
-        in << *it << endl;
-
-        it++;
+    if (!sim->readMem(esp,value,BS_32))
+    {
+        reportError("Invalid address '0x%X'.\n", esp);
+        return false;
     }
 
-    if (!sim->exec(&in))
+    if (!sim->setRegValue(R_EBP,value))
+    {
+        reportError("Invalid address '0x%X'.\n", esp);
         return false;
+    }
 
+    esp+=4;
+    sim->setRegValue(R_ESP,esp);
 
     return true;
 }
