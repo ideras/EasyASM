@@ -112,7 +112,7 @@ instruction(R) ::= XKW_MUL(N) argument(A1).                           { R = new 
 instruction(R) ::= XKW_IMUL(N) argument(A1) XTK_COMMA argument(A2).    { R = new XI_Imul2(A1, A2); R->line = N->line; }
 instruction(R) ::= XKW_IMUL(N) argument(A1) XTK_COMMA argument(A2) XTK_COMMA argument(A3). { R = new XI_Imul3(A1, A2, A3); R->line = N->line; }
 instruction(R) ::= XKW_DIV(N) argument(A1).                            { R = new XI_Div(A1); R->line = N->line; }
-instruction(R) ::= XKW_IDIV(N) argument(A1) XTK_COMMA argument(A2).    { R = new XI_Idiv(A1, A2); R->line = N->line; }
+instruction(R) ::= XKW_IDIV(N) argument(A1).                           { R = new XI_Idiv(A1); R->line = N->line; }
 instruction(R) ::= XKW_AND(N) argument(A1) XTK_COMMA argument(A2).     { R = new XI_And(A1, A2); R->line = N->line; }
 instruction(R) ::= XKW_OR(N) argument(A1) XTK_COMMA argument(A2).      { R = new XI_Or(A1, A2); R->line = N->line; }
 instruction(R) ::= XKW_XOR(N) argument(A1) XTK_COMMA argument(A2).     { R = new XI_Xor(A1, A2); R->line = N->line; }
@@ -172,7 +172,7 @@ instruction(R) ::= XKW_SETPO(N) argument(A1).   { R = new XI_Setpo(A1); R->line 
 instruction(R) ::= XKW_SETS(N) argument(A1).    { R = new XI_Sets(A1); R->line = N->line; }
 instruction(R) ::= XKW_SETZ(N) argument(A1).    { R = new XI_Setz(A1); R->line = N->line; }
 instruction(R) ::= XKW_CDQ(N).                  { R = new XI_Cdq(); R->line = N->line; }
-instruction(R) ::= XKW_LEAVE(N).                  { R = new XI_Leave(); R->line = N->line; }
+instruction(R) ::= XKW_LEAVE(N).                { R = new XI_Leave(); R->line = N->line; }
 
 opt_argument(R) ::= argument(A). { R = A; }
 opt_argument(R) ::=  .           { R = NULL; }

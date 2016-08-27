@@ -582,7 +582,7 @@ IMPLEMENT_INSTRUCTION(Leave) {
 IMPLEMENT_INSTRUCTION(Imul1) {
     UNUSED(result);
 
-    reportError("IMUL instruction not supported.\n");
+    reportError("IMUL instruction with one argument not supported.\n");
     return false;
 }
 
@@ -664,7 +664,7 @@ IMPLEMENT_INSTRUCTION(Imul3) {
     UNUSED(sim);
     UNUSED(result);
 
-    reportError("IMUL instruction not supported.\n");
+    reportError("IMUL instruction with three argument  not supported.\n");
     return false;
 }
 
@@ -672,8 +672,51 @@ IMPLEMENT_INSTRUCTION(Idiv) {
     UNUSED(sim);
     UNUSED(result);
 
-    reportError("Idiv instruction not supported.\n");
-    return false;
+    if (!arg->isA(XARG_REGISTER) && !arg->isA(XARG_MEMREF)) {
+        reportError("Invalid arguments '%s' in IDIV instruction\n", arg->toString().c_str());
+        return false;
+    }
+    
+    XReference ref;
+    
+    if (!arg->getReference(sim, ref)) {
+        reportError("Unknown error in getRef '%s'\n", arg->toString().c_str());
+        return false;
+    }
+    
+    switch (ref.bitSize) {
+        case BS_8:
+        case BS_16:
+            reportError("EasyASM only supports 32 bits operands in IDIV instruction\n");
+            return false;
+        case BS_32: {
+            int64_t temp, edx_eax;
+            uint32_t eax, edx;
+            
+            sim->getRegValue(R_EAX, eax);
+            sim->getRegValue(R_EDX, edx);
+            sim->getValue(ref);
+            
+            edx_eax = ((int64_t)edx << 32) | eax;
+            temp = edx_eax / (int32_t)ref.value;
+            
+            if(temp > 0x7FFFFFFF || temp < (int32_t)0x80000000) {
+                reportError("Exception in IDIV instruction\n");
+                sim->runtime_context->stop = true;
+                return false;
+            }
+            eax = temp & 0xFFFFFFFF;
+            edx = edx_eax % ((int32_t)ref.value);
+            
+            sim->setRegValue(R_EAX, eax);
+            sim->setRegValue(R_EDX, edx);
+            
+            return true;
+        }
+        default:
+            reportError("Memory reference in IDIV instruction requires size directive 'byte', 'word' or 'dword'\n");
+            return false;
+    }
 }
 
 IMPLEMENT_INSTRUCTION(Mul) {

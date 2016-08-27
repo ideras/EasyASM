@@ -298,48 +298,6 @@ bool X86Sim::resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &
         it++;
     }
     
-    /*vector<XInstruction *>::iterator it_inst = vinst.begin();
-    
-    while (it_inst != vinst.end()) {
-        XInstruction *inst = *it_inst;
-        
-        runtime_context->line = inst->line;
-        switch (inst->getKind()) {
-            case XINST_Jmp:
-            case XINST_Jz:
-            case XINST_Jnz:
-            case XINST_Jl:
-            case XINST_Jg:
-            case XINST_Jle:
-            case XINST_Jge:
-            case XINST_Jb:
-            case XINST_Ja:
-            case XINST_Jbe:
-            case XINST_Jae:
-            case XINST_Call: {
-                XInst1Arg *jinst = (XInst1Arg *)inst;
-                
-                if (!jinst->arg->isA(XARG_IDENTIFIER)) {
-                    reportError("Invalid argument '%s' for instruction '%s'\n", jinst->arg->toString().c_str(), jinst->getName());
-                    return false;
-                }
-                
-                string tag = ((XArgIdentifier *)jinst->arg)->name;
-                
-                if (lbl_map.find(tag) == lbl_map.end()) {
-                    reportError("Invalid label '%s' in instruction '%s'\n", tag.c_str(), jinst->getName());
-                    return false;
-                }
-                uint32_t target = lbl_map[tag];
-                delete jinst->arg;
-                jinst->arg = new XArgConstant(target);
-                break;
-            }
-        }
-        
-        it_inst ++;
-    }*/
-    
     return true;
 }
     
