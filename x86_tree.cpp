@@ -588,11 +588,7 @@ IMPLEMENT_INSTRUCTION(Leave) {
         return false;
     }
 
-    if (!sim->setRegValue(R_EBP,value))
-    {
-        reportError("Invalid address '0x%X'.\n", esp);
-        return false;
-    }
+    sim->setRegValue(R_EBP,value));
 
     esp+=4;
     sim->setRegValue(R_ESP,esp);
