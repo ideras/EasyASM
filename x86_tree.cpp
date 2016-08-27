@@ -571,6 +571,14 @@ IMPLEMENT_INSTRUCTION(Shr) {
     return true;
 }
 
+IMPLEMENT_INSTRUCTION(Leave) {
+    UNUSED(sim);
+    UNUSED(result);
+
+    reportError("Leave instruction not supported.\n");
+    return false;
+}
+
 IMPLEMENT_INSTRUCTION(Imul1) {
     UNUSED(result);
 

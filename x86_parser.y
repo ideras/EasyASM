@@ -171,7 +171,8 @@ instruction(R) ::= XKW_SETPE(N) argument(A1).   { R = new XI_Setpe(A1); R->line 
 instruction(R) ::= XKW_SETPO(N) argument(A1).   { R = new XI_Setpo(A1); R->line = N->line; }
 instruction(R) ::= XKW_SETS(N) argument(A1).    { R = new XI_Sets(A1); R->line = N->line; }
 instruction(R) ::= XKW_SETZ(N) argument(A1).    { R = new XI_Setz(A1); R->line = N->line; }
-instruction(R) ::= XKW_CDQ(N).                                         { R = new XI_Cdq(); R->line = N->line; }
+instruction(R) ::= XKW_CDQ(N).                  { R = new XI_Cdq(); R->line = N->line; }
+instruction(R) ::= XKW_LEAVE(N).                  { R = new XI_Leave(); R->line = N->line; }
 
 opt_argument(R) ::= argument(A). { R = A; }
 opt_argument(R) ::=  .           { R = NULL; }

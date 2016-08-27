@@ -118,6 +118,7 @@ static XKeyword kw[] = {
     {"sets", XKW_SETS},
     {"setz", XKW_SETZ},  
     {"cdq", XKW_CDQ},
+    {"leave", XKW_LEAVE},
     {"byte", XKW_BYTE},
     {"word", XKW_WORD},
     {"dword", XKW_DWORD},

@@ -53,7 +53,9 @@ void processLines(list<string> &lines)
     if (simMips32) {
         msim.exec(&in);
     } else {
-        xsim.exec(&in);
+
+        if (!xsim.exec(&in))
+            return;
         
         if (lines.size() == 1) {
             XReference result;

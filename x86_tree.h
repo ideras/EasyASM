@@ -124,6 +124,7 @@ void reportError(const char *format, ...);
 #define XINST_Setpo      66
 #define XINST_Sets       67
 #define XINST_Setz       68
+#define XINST_Leave      69
 
 #define XINST_Tagged     899
 #define XCMD_Show        900
@@ -616,6 +617,7 @@ DEFINE_INSTRUCTION_1ARG("sets", Sets);
 DEFINE_INSTRUCTION_1ARG("setz", Setz);
 
 DEFINE_INSTRUCTION_0ARG("cdq", Cdq);
+DEFINE_INSTRUCTION_0ARG("leave", Leave);
 
 
 #endif // X86_TREE_H
