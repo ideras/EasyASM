@@ -575,8 +575,28 @@ IMPLEMENT_INSTRUCTION(Leave) {
     UNUSED(sim);
     UNUSED(result);
 
-    reportError("Leave instruction not supported.\n");
-    return false;
+    string mov_esp_ebp = "mov esp, ebp";
+    string pop_ebp = "pop ebp";
+
+    list<string> lines;
+
+    lines.push_back(mov_esp_ebp);
+    lines.push_back(pop_ebp);
+
+    list<string>::iterator it = lines.begin();
+    stringstream in;
+
+    while (it != lines.end()) {
+        in << *it << endl;
+
+        it++;
+    }
+
+    if (!sim->exec(&in))
+        return false;
+
+
+    return true;
 }
 
 IMPLEMENT_INSTRUCTION(Imul1) {
