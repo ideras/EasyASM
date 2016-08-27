@@ -588,7 +588,7 @@ IMPLEMENT_INSTRUCTION(Leave) {
         return false;
     }
 
-    sim->setRegValue(R_EBP,value));
+    sim->setRegValue(R_EBP,value);
 
     esp+=4;
     sim->setRegValue(R_ESP,esp);
