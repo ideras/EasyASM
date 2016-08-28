@@ -1,0 +1,6 @@
+EasyASM
+*.o
+/generated/**
+mips32_parser.h
+x86_parser.h
+*.out
