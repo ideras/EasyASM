@@ -744,34 +744,88 @@ IMPLEMENT_INSTRUCTION(Idiv) {
 }
 
 IMPLEMENT_INSTRUCTION(Mul) {
-    XReference ref;
-
-    if (!arg->getReference(sim, ref))
+    
+    if (!arg->isA(XARG_REGISTER) && !arg->isA(XARG_MEMREF)) {
+        reportError("Invalid arguments '%s' in Mul instruction\n", arg->toString().c_str());
         return false;
+    }
+    
+    XReference a_ref;
+    
+    if (!arg->getReference(sim, a_ref))
+        return false;
+    
+    uint32_t arg_value, eflags = 0;
+    
+    if (!a_ref.deref(arg_value))
+        return false;
+    
+    result.type = RT_Reg;
+    result.sim = sim;
+    
+    switch (a_ref.bitSize) {
+        case BS_8: {
+            uint32_t temp, reg_al;
+            
+            sim->getRegValue(R_AL, reg_al);
+            
+            temp = reg_al * arg_value;
+            arg_value = temp & 0xFFFF;
+            sim->setRegValue(R_AX, arg_value);
 
-    switch (ref.type) {
-        case RT_Mem: {
-            reportError("Memory argument for MUL instruction not supported.\n");
-            return false;
-        }
-        case RT_Reg: {
-            switch (ref.bitSize) {
-                case BS_8: {
-                }
-                case BS_16: {
-                }
-                case BS_32: {
-                }
+            if ( (temp & 0xFF00) != 0 ) {
+                eflags = (1 << CF_POS) | (1 << OF_POS);
             }
+            
+            result.address = R_AX;
+            result.bitSize = BS_8;
+            break;
         }
-        default: {
-            reportError("Invalid argument for MUL instruction '%s'.\n", arg->toString().c_str());
-            return false;
+        case BS_16: {
+            uint32_t temp, reg_ax, reg_dx;
+            
+            sim->getRegValue(R_AX, reg_ax);
+            temp = reg_ax * arg_value;
+            reg_ax = temp & 0x0000FFFF;
+            reg_dx = (temp & 0xFFFF0000) >> 16;
+            
+            sim->setRegValue(R_AX, reg_ax);
+            sim->setRegValue(R_DX, reg_dx);
+
+            if (reg_dx != 0) {
+                eflags = (1 << CF_POS) | (1 << OF_POS);
+            }
+            
+            result.address = R_AX;
+            result.bitSize = BS_16;
+            
+            break;
+        }
+        case BS_32: {
+            uint64_t temp;
+            uint32_t reg_eax, reg_edx;
+            
+            sim->getRegValue(R_EAX, reg_eax);
+            temp = (uint64_t)reg_eax * (uint64_t)arg_value;
+            reg_eax = temp & 0xFFFFFFFF;
+            reg_edx = (temp & 0xFFFFFFFF00000000) >> 32;
+
+            sim->setRegValue(R_EAX, reg_eax);
+            sim->setRegValue(R_EDX, reg_edx);
+
+            if (reg_edx != 0) {
+                eflags = (1 << CF_POS) | (1 << OF_POS);
+            }
+            
+            result.address = R_EAX;
+            result.bitSize = BS_32;
+            
+            break;
         }
     }
-
-    reportError("MUL instruction not supported.\n");
-    return false;
+    
+    sim->setRegValue(R_EFLAGS, eflags);
+    return true;
 }
 
 IMPLEMENT_INSTRUCTION(Div) {
