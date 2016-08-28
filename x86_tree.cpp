@@ -695,9 +695,13 @@ IMPLEMENT_INSTRUCTION(Idiv) {
 
 IMPLEMENT_INSTRUCTION(Mul) {
     XReference ref;
+    XReference rVal;
+    rVal.type = RT_Reg;
 
     if (!arg->getReference(sim, ref))
         return false;
+    
+    uint32_t eflags = 0;
 
     switch (ref.type) {
         case RT_Mem: {
@@ -705,23 +709,66 @@ IMPLEMENT_INSTRUCTION(Mul) {
             return false;
         }
         case RT_Reg: {
+            sim->getValue(ref);
             switch (ref.bitSize) {
                 case BS_8: {
+                    rVal.address = R_AL;
+                    sim->getValue(rVal);
+                    uint32_t temp = (uint32_t)((uint8_t)rVal.value) * (uint32_t)((uint8_t)ref.value);
+                    rVal.value = temp & 0xFFFF;
+                    sim->setRegValue(R_AX,rVal.value);
+
+                    uint32_t value = temp & 0xFFFFFF00;
+
+                    if ( value != 0 ) {
+                        eflags = (1 << CF_POS) | (1 << OF_POS);
+                    }
                 }
+                break;
                 case BS_16: {
+                    rVal.address = R_AX;
+                    sim->getValue(rVal);
+                    uint32_t temp = (uint32_t)((uint16_t)rVal.value) * (uint32_t)((uint16_t)ref.value);
+                    rVal.value = temp & 0xFFFF;
+                    uint32_t dx = (temp & 0xFFFF0000) >> BS_16;
+                    sim->setRegValue(R_AX,rVal.value);
+                    sim->setRegValue(R_DX,dx);
+
+                    uint32_t value = dx & 0xFFFF;
+
+                    if ( value != 0 ) {
+                        eflags = (1 << CF_POS) | (1 << OF_POS);
+                    }
                 }
+                break;
                 case BS_32: {
+                    rVal.address = R_EAX;
+                    sim->getValue(rVal);
+                    uint64_t temp = (uint64_t)((uint32_t)rVal.value) * (uint64_t)((uint32_t)ref.value);
+                    rVal.value = temp & 0xFFFFFFFF;
+                    uint32_t edx = (temp & 0xFFFFFFFF00000000) >> BS_32;
+                    sim->setRegValue(R_EAX,rVal.value);
+                    sim->setRegValue(R_EDX,edx);
+
+                    uint32_t value = edx & 0xFFFFFFFF;
+
+                    if ( value != 0 ) {
+                        eflags = (1 << CF_POS) | (1 << OF_POS);
+                    }
                 }
+                break;
             }
         }
+        break;
         default: {
             reportError("Invalid argument for MUL instruction '%s'.\n", arg->toString().c_str());
             return false;
         }
     }
-
-    reportError("MUL instruction not supported.\n");
-    return false;
+    sim->setRegValue(R_EFLAGS, eflags);
+    result = rVal;
+    
+    return true;
 }
 
 IMPLEMENT_INSTRUCTION(Div) {
