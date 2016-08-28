@@ -74,6 +74,5 @@ selectionSort:
         call    selectionSort
         add     esp, 16
 .L1:
-        mov esp, ebp
-        pop ebp
+        leave
         ret

@@ -72,12 +72,17 @@ enum XRegister {R_EAX, R_EBX, R_ECX, R_EDX, R_ESI, R_EDI, R_ESP, R_EBP, R_EFLAGS
 
 enum XRefType { RT_Reg, RT_Mem, RT_Const, RT_None };
 
+class X86Sim;
+
 struct XReference {
     XRefType type; //Register index or Memory address
-    int      bitSize; //Target size
+    int      bitSize; //Target size in bits
 
+    bool deref(uint32_t &value);
+    bool assign(uint32_t value);
+    
     uint32_t address;
-    uint32_t value;
+    X86Sim   *sim;
 };
 
 class XNode;
@@ -124,8 +129,6 @@ public:
     
     bool getRegValue(int regId, uint32_t &value);
     bool setRegValue(int regId, uint32_t value);
-    bool getValue(XReference &ref);
-    bool setValue(XReference &ref, uint32_t value);
     bool readMem(uint32_t vaddr, uint32_t &result, XBitSize bitSize);
     bool writeMem(uint32_t vaddr, uint32_t value, XBitSize bitSize);
     bool doOperation(unsigned char op, XReference &ref1, uint32_t value2);

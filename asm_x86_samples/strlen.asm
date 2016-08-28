@@ -10,13 +10,13 @@
 my_strlen:
     mov eax, dword [esp + 8]
     mov dword [eax], 0
-    loop_for:
-	mov ebx, dword[esp + 4]
-	mov ecx, [eax]
-	mov bl, [ebx + ecx]
-	cmp bl, 0
-	je end_loop_for
-	inc dword[eax]
-	jmp loop_for
-    end_loop_for:
-	ret
+loop_for:
+    mov ebx, dword[esp + 4]
+    mov ecx, [eax]
+    mov bl, [ebx + ecx]
+    cmp bl, 0
+    je end_loop_for
+    inc dword [eax]
+    jmp loop_for
+end_loop_for:
+    ret

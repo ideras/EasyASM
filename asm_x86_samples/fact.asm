@@ -25,6 +25,5 @@ L2:
         add     esp, 16
         imul    eax, DWORD PTR [ebp+8]
 L3:
-        mov esp, ebp
-        pop ebp
+        leave
         ret

@@ -21,6 +21,33 @@ void *ParseAlloc(void *(*mallocProc)(size_t));
 void ParseFree(void *p, void (*freeProc)(void*));
 void Parse(void *yyp, int yymajor, TokenInfo *yyminor, XParserContext *ctx);
 
+//XReference methods
+bool XReference::deref(uint32_t &value)
+{
+    switch (type) {
+            case RT_Reg: return sim->getRegValue(address, value);
+            case RT_Mem: return sim->readMem(address, value, bitSize);
+            case RT_Const: value = address; break;
+            default:
+                return false;
+        }
+        
+    return true;
+}
+
+bool XReference::assign(uint32_t value)
+{
+    switch (type) {
+        case RT_Reg:
+            return sim->setRegValue(address, value);
+        case RT_Mem:
+            return sim->writeMem(address, value, bitSize);
+        default:
+            return false;
+    }
+}
+
+//X86Sim methods
 X86Sim::X86Sim()
 {
     gpr[R_ESP] = X_VIRTUAL_STACK_END_ADDR;
@@ -99,18 +126,6 @@ bool X86Sim::setRegValue(int regId, uint32_t value)
     }
 
     return true;
-}
-
-bool X86Sim::setValue(XReference &ref, uint32_t value)
-{
-    switch (ref.type) {
-        case RT_Reg:
-            return setRegValue(ref.address, value);
-        case RT_Mem:
-            return writeMem(ref.address, value, ref.bitSize);
-        default:
-            return false;
-    }
 }
 
 bool X86Sim::showRegValue(int regId, PrintFormat format)
@@ -402,11 +417,12 @@ void X86Sim::updateFlags(uint8_t op, uint8_t sign1, uint8_t sign2, uint32_t arg1
 
 bool X86Sim::doOperation(unsigned char op, XReference &ref1, uint32_t value2)
 {
-    if (!getValue(ref1))
+    uint32_t value1;
+        
+    if (!ref1.deref(value1))
         return false;
 
-    uint32_t result = ref1.value;
-    uint32_t value1 = ref1.value;
+    uint32_t result = value1;
     uint8_t sign1, sign2;
 
     sign1 = SIGN_BIT(value1, ref1.bitSize) != 0;
@@ -462,22 +478,7 @@ bool X86Sim::doOperation(unsigned char op, XReference &ref1, uint32_t value2)
     updateFlags(op, sign1, sign2, value1, value2, result, ref1.bitSize);
 
     if ((op != XFN_CMP) && (op != XFN_TEST)) {
-
-        setValue(ref1, result);
-        ref1.value = result;
-    }
-
-    return true;
-}
-
-bool X86Sim::getValue(XReference &ref)
-{
-    switch (ref.type) {
-        case RT_Reg: return getRegValue(ref.address, ref.value);
-        case RT_Mem: return readMem(ref.address, ref.value, ref.bitSize);
-        case RT_Const: break;
-        default:
-            return false;
+        ref1.assign(result);
     }
 
     return true;

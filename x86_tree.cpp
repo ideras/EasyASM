@@ -37,13 +37,14 @@ void XNode::operator delete(void *ptrb)
             reportError("Memory-Memory references are not allowed.\n"); \
             return false;                                               \
         }                                                               \
+        uint32_t value2;                                                \
                                                                         \
-        if (!sim->getValue(ref2)) {                                     \
+        if (!ref2.deref(value2)) {                                 \
             reportError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);  \
             return false;   \
         }                   \
                             \
-        if (!sim->doOperation(function, ref1, ref2.value)) {   \
+        if (!sim->doOperation(function, ref1, value2)) {   \
             reportError("Invalid arguments for operation.\n");  \
             return false;                                       \
         }                                                       \
@@ -107,6 +108,7 @@ bool XArgRegister::getReference(X86Sim *sim, XReference &ref)
     ref.type = RT_Reg;
     ref.bitSize = this->regSize;
     ref.address = this->regId;
+    ref.sim = sim;
 
     return true;
 }
@@ -153,6 +155,7 @@ bool XArgMemRef::getReference(X86Sim *xsim, XReference &ref)
     ref.type = RT_Mem;
     ref.bitSize = this->sizeDirective;
     ref.address = vaddr;
+    ref.sim = xsim;
 
     return true;
 }
@@ -179,9 +182,9 @@ bool XArgConstant::getReference(X86Sim *sim, XReference &ref)
 
     ref.type = RT_Const;
     ref.bitSize = BS_32;
-    ref.address = 0;
-    ref.value = value;
-
+    ref.address = value;
+    ref.sim = sim;
+    
     return true;
 }
 
@@ -349,7 +352,7 @@ IMPLEMENT_INSTRUCTION(Mov) {
     
     result = ref1;
 
-    return sim->setValue(ref1, value2);
+    return ref1.assign(value2);
 }
 
 IMPLEMENT_INSTRUCTION(Movsx) {
@@ -372,7 +375,7 @@ IMPLEMENT_INSTRUCTION(Movsx) {
 
     result = ref1;
 
-    return sim->setValue(ref1, value2);
+    return ref1.assign(value2);
 }
 
 IMPLEMENT_INSTRUCTION(Movzx) {
@@ -395,7 +398,7 @@ IMPLEMENT_INSTRUCTION(Movzx) {
 
     result = ref1;
 
-    return sim->setValue(ref1, value2);
+    return ref1.assign(value2);
 }
 
 IMPLEMENT_INSTRUCTION(Push) {
@@ -411,7 +414,9 @@ IMPLEMENT_INSTRUCTION(Push) {
         return false;
     }
 
-    if (!sim->getValue(ref1)) {
+    uint32_t value;
+    
+    if (!ref1.deref(value)) {
         reportError("getValue error %X\n", ref1.address);
         return false;
     }
@@ -421,7 +426,7 @@ IMPLEMENT_INSTRUCTION(Push) {
     sim->getRegValue(R_ESP, esp);
     esp -= ref1.bitSize / 8;
 
-    if (!sim->writeMem(esp, ref1.value, ref1.bitSize)) {
+    if (!sim->writeMem(esp, value, ref1.bitSize)) {
         reportError("Invalid address '0x%X'. Maybe stack overflow.\n", esp);
         return false;
     }
@@ -453,8 +458,8 @@ IMPLEMENT_INSTRUCTION(Pop) {
         reportError("Invalid address '0x%X'.\n", esp);
         return false;
     }
-    if (!sim->setValue(ref1, value)) {
-        reportError("Maybe a BUG in the machine.\n", esp);
+    if (!ref1.assign(value)) {
+        reportError("Oops: BUG in the machine.\n", esp);
         return false;
     }
     esp += ref1.bitSize / 8;
@@ -486,7 +491,7 @@ IMPLEMENT_INSTRUCTION(Lea) {
         return false;
     }
 
-    if (!sim->setValue(ref1, ref2.address))
+    if (!ref1.assign(ref2.address))
         return false;
 
     result = ref1;
@@ -521,13 +526,15 @@ IMPLEMENT_INSTRUCTION(Shl) {
         reportError("Invalid argument for shift operation. Expected register 'cl'.\n");
         return false;
     }
-
-    if (!sim->getValue(ref2)) {
+    
+    uint32_t value2;
+    
+    if (!ref2.deref(value2)) {
         reportError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
         return false;
     }
 
-    if (!sim->doOperation(XFN_SHL, ref1, ref2.value)) {
+    if (!sim->doOperation(XFN_SHL, ref1, value2)) {
         reportError("Invalid argument for operation.\n");
         return false;
     }
@@ -555,13 +562,15 @@ IMPLEMENT_INSTRUCTION(Shr) {
         reportError("Invalid argument for shift operation. Expected register 'cl'.\n");
         return false;
     }
+    
+    uint32_t value2;
 
-    if (!sim->getValue(ref2)) {
+    if (!ref2.deref(value2)) {
         reportError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
         return false;
     }
 
-    if (!sim->doOperation(XFN_SHR, ref1, ref2.value)) {
+    if (!sim->doOperation(XFN_SHR, ref1, value2)) {
         reportError("Invalid argument for operation.\n");
         return false;
     }
@@ -574,24 +583,20 @@ IMPLEMENT_INSTRUCTION(Shr) {
 IMPLEMENT_INSTRUCTION(Leave) {
     UNUSED(result);
 
-    uint32_t ebp_value;
-    sim->getRegValue(R_EBP,ebp_value);
-    sim->setRegValue(R_ESP,ebp_value);
+    uint32_t ebp_value, old_ebp_value;
+    
+    sim->getRegValue(R_EBP, ebp_value);
+    sim->setRegValue(R_ESP, ebp_value);
 
-    uint32_t esp, value;
-
-    sim->getRegValue(R_ESP,esp);
-
-    if (!sim->readMem(esp,value,BS_32))
-    {
-        reportError("Invalid address '0x%X'.\n", esp);
+    if (!sim->readMem(ebp_value, old_ebp_value, BS_32)) {
+        reportError("Invalid address '0x%X'.\n", ebp_value);
         return false;
     }
 
-    sim->setRegValue(R_EBP,value);
+    sim->setRegValue(R_EBP, old_ebp_value);
 
-    esp+=4;
-    sim->setRegValue(R_ESP,esp);
+    ebp_value += 4;
+    sim->setRegValue(R_ESP, ebp_value);
 
     return true;
 }
@@ -633,12 +638,14 @@ IMPLEMENT_INSTRUCTION(Imul2) {
         }
     }
     
-    if (!sim->getValue(ref1)) {
+    uint32_t value1, value2;
+    
+    if (!ref1.deref(value1)) {
         reportError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
         return false;
     }
 
-    if (!sim->getValue(ref2)) {
+    if (!ref2.deref(value2)) {
         reportError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
         return false;
     }
@@ -647,19 +654,19 @@ IMPLEMENT_INSTRUCTION(Imul2) {
     
     switch (ref1.bitSize) {
         case BS_16: {
-            int32_t temp = (int32_t)((int16_t)ref1.value) * (int32_t)((int16_t)ref2.value);
-            ref1.value = temp & 0xFFFF;
+            int32_t temp = (int32_t)((int16_t)value1) * (int32_t)((int16_t)value2);
+            value1 = temp & 0xFFFF;
     
-            if ( (int32_t)((int16_t)ref1.value) != temp ) {
+            if ( (int32_t)((int16_t)value1) != temp ) {
                 eflags = (1 << CF_POS) | (1 << OF_POS);
             }
             break;            
         }
         case BS_32: {
-            int64_t temp = (int64_t)((int32_t)ref1.value) * (int64_t)((int32_t)ref2.value);
-            ref1.value = temp & 0xFFFFFFFF;
+            int64_t temp = (int64_t)((int32_t)value1) * (int64_t)((int32_t)value2);
+            value1 = temp & 0xFFFFFFFF;
     
-            if ( (int64_t)((int32_t)ref1.value) != temp ) {
+            if ( (int64_t)((int32_t)value1) != temp ) {
                 eflags = (1 << CF_POS) | (1 << OF_POS);
             }
             break;
@@ -668,7 +675,7 @@ IMPLEMENT_INSTRUCTION(Imul2) {
     
     sim->setRegValue(R_EFLAGS, eflags);
     
-    if (!sim->setValue(ref1, ref1.value)) {
+    if (!ref1.assign(value1)) {
         return false;
     }
 
@@ -708,14 +715,14 @@ IMPLEMENT_INSTRUCTION(Idiv) {
             return false;
         case BS_32: {
             int64_t temp, edx_eax;
-            uint32_t eax, edx;
+            uint32_t eax, edx, arg_value;
             
             sim->getRegValue(R_EAX, eax);
             sim->getRegValue(R_EDX, edx);
-            sim->getValue(ref);
+            ref.deref(arg_value);
             
             edx_eax = ((int64_t)edx << 32) | eax;
-            temp = edx_eax / (int32_t)ref.value;
+            temp = edx_eax / (int32_t)arg_value;
             
             if(temp > 0x7FFFFFFF || temp < (int32_t)0x80000000) {
                 reportError("Exception in IDIV instruction\n");
@@ -723,7 +730,7 @@ IMPLEMENT_INSTRUCTION(Idiv) {
                 return false;
             }
             eax = temp & 0xFFFFFFFF;
-            edx = edx_eax % ((int32_t)ref.value);
+            edx = edx_eax % ((int32_t)arg_value);
             
             sim->setRegValue(R_EAX, eax);
             sim->setRegValue(R_EDX, edx);
@@ -780,9 +787,16 @@ IMPLEMENT_INSTRUCTION(Inc) {
 
     if (!arg->getReference(sim, ref1))
         return false;
+    
+    if ((ref1.type == RT_Mem) && (ref1.bitSize == 0)) {
+        reportError("Memory reference argument '%s' requires size specification (byte, word or dword).\n",
+                    arg->toString().c_str());
+
+        return false;
+    }
 
     if (!sim->doOperation(XFN_ADD, ref1, 1)) {
-        reportError("Invalid argument for operation.\n");
+        reportError("Invalid argument in instruction '%s'.\n", getName());
         return false;
     }
 
@@ -1204,10 +1218,13 @@ IMPLEMENT_INSTRUCTION(Seta) {
     bool cf = sim->isFlagSet(CF_MASK);
     bool zf = sim->isFlagSet(ZF_MASK);
     
-    if (!sim->setValue(a_ref, (!cf && !zf)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((!cf && !zf)? 1 : 0) ) {
         return false;
     }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNC r/m8    Set byte if not carry (CF=0).
@@ -1220,10 +1237,13 @@ IMPLEMENT_INSTRUCTION(Setae) {
 
     bool cf = sim->isFlagSet(CF_MASK);
     
-    if (!sim->setValue(a_ref, (!cf)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((!cf)? 1 : 0) ) {
         return false;
     }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNA r/m8    Set byte if not above (CF=1 or ZF=1).
@@ -1236,10 +1256,13 @@ IMPLEMENT_INSTRUCTION(Setbe) {
     bool cf = sim->isFlagSet(CF_MASK);
     bool zf = sim->isFlagSet(ZF_MASK);
     
-    if (!sim->setValue(a_ref, (cf || zf)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((cf || zf)? 1 : 0) ) {
         return false;
     }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNAE r/m8    Set byte if not above or equal (CF=1).
@@ -1252,10 +1275,13 @@ IMPLEMENT_INSTRUCTION(Setb) {
     
     bool cf = sim->isFlagSet(CF_MASK);
     
-    if (!sim->setValue(a_ref, cf? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign(cf? 1 : 0) ) {
         return false;
     }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNLE r/m8    Set byte if not less or equal (ZF=0 and SF=OF).
@@ -1269,10 +1295,13 @@ IMPLEMENT_INSTRUCTION(Setg) {
     bool sf = sim->isFlagSet(SF_MASK);
     bool of = sim->isFlagSet(OF_MASK);
     
-    if (!sim->setValue(a_ref, (!zf && sf == of)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((!zf && sf == of)? 1 : 0) ) {
         return false;
     }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNL r/m8    Set byte if not less (SF=OF).
@@ -1285,10 +1314,13 @@ IMPLEMENT_INSTRUCTION(Setge) {
     bool sf = sim->isFlagSet(SF_MASK);
     bool of = sim->isFlagSet(OF_MASK);
     
-    if (!sim->setValue(a_ref, (sf == of)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((sf == of)? 1 : 0) ) {
         return false;
     }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNGE r/m8    Set if not greater or equal (SF<>OF).
@@ -1301,10 +1333,13 @@ IMPLEMENT_INSTRUCTION(Setl) {
     bool sf = sim->isFlagSet(SF_MASK);
     bool of = sim->isFlagSet(OF_MASK);
     
-    if (!sim->setValue(a_ref, (sf != of)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((sf != of)? 1 : 0) ) {
         return false;
     }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNG r/m8    Set byte if not greater (ZF=1 or SF<>OF).
@@ -1318,10 +1353,13 @@ IMPLEMENT_INSTRUCTION(Setle) {
     bool sf = sim->isFlagSet(SF_MASK);
     bool of = sim->isFlagSet(OF_MASK);
     
-    if (!sim->setValue(a_ref, (zf && sf != of)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((zf && sf != of)? 1 : 0) ) {
         return false;
     }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNZ r/m8    Set byte if not zero (ZF=0).
@@ -1333,10 +1371,13 @@ IMPLEMENT_INSTRUCTION(Setnz) {
 
     bool zf = sim->isFlagSet(ZF_MASK);
 
-    if (!sim->setValue(a_ref, (!zf)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((!zf)? 1 : 0) ) {
         return false;
-    }    
+    }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNO r/m8    Set byte if not overflow (OF=0).
@@ -1347,10 +1388,13 @@ IMPLEMENT_INSTRUCTION(Setno) {
 
     bool of = sim->isFlagSet(OF_MASK);
 
-    if (!sim->setValue(a_ref, (!of)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((!of)? 1 : 0) ) {
         return false;
-    }    
+    }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETPO r/m8    Set byte if parity odd (PF=0).
@@ -1362,10 +1406,13 @@ IMPLEMENT_INSTRUCTION(Setnp) {
 
     bool pf = sim->isFlagSet(PF_MASK);
 
-    if (!sim->setValue(a_ref, (!pf)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((!pf)? 1 : 0) ) {
         return false;
-    }     
+    }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETNS r/m8    Set byte if not sign (SF=0).
@@ -1376,10 +1423,13 @@ IMPLEMENT_INSTRUCTION(Setns) {
 
     bool sf = sim->isFlagSet(SF_MASK);
 
-    if (!sim->setValue(a_ref, (!sf)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((!sf)? 1 : 0) ) {
         return false;
-    }     
+    }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETO r/m8    Set byte if overflow (OF=1).
@@ -1390,10 +1440,13 @@ IMPLEMENT_INSTRUCTION(Seto) {
 
     bool of = sim->isFlagSet(OF_MASK);
 
-    if (!sim->setValue(a_ref, (of)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((of)? 1 : 0) ) {
         return false;
-    } 
+    }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETPE r/m8    Set byte if parity even (PF=1).
@@ -1405,10 +1458,13 @@ IMPLEMENT_INSTRUCTION(Setp) {
     
     bool pf = sim->isFlagSet(PF_MASK);
 
-    if (!sim->setValue(a_ref, (pf)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((pf)? 1 : 0) ) {
         return false;
-    }  
+    }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETS r/m8    Set byte if sign (SF=1).
@@ -1419,10 +1475,13 @@ IMPLEMENT_INSTRUCTION(Sets) {
 
     bool sf = sim->isFlagSet(SF_MASK);
     
-    if (!sim->setValue(a_ref, (sf)? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign((sf)? 1 : 0) ) {
         return false;
-    }     
+    }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 //SETE r/m8    Set byte if equal (ZF=1).
@@ -1434,10 +1493,13 @@ IMPLEMENT_INSTRUCTION(Setz) {
 
     bool zf = sim->isFlagSet(ZF_MASK);
     
-    if (!sim->setValue(a_ref, zf? 1 : 0)) {
-        reportError("Unknown error on instruction '%s'\n", getName());
+    if ( !a_ref.assign(zf? 1 : 0) ) {
         return false;
     }
+    
+    result = a_ref;
+    
+    return true;
 }
 
 IMPLEMENT_INSTRUCTION(Cdq) {
@@ -1487,7 +1549,7 @@ bool XCmdSet::exec(X86Sim *sim, XReference &result)
             while (it != lvalue.end()) {
                 uint32_t value = *it;
                 
-                if (!sim->setValue(ref, value)) {
+                if (!ref.assign(value)) {
                     reportError("Invalid address '0x%X'.\n", ref.address);
                     return false;
                 }
@@ -1555,11 +1617,11 @@ bool XCmdShow::exec(X86Sim *sim, XReference &result)
             return true;
         }
         case XARG_CONST: {
-            XReference ref;
+            uint32_t value;
 
-            arg->getReference(sim, ref);
+            arg->eval(sim, BS_32, 0, value);
 
-            printNumber(ref.value, ref.bitSize, dataFormat);
+            printNumber(value, BS_32, dataFormat);
             printf("\n");
 
             return true;
