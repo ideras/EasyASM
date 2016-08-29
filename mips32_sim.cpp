@@ -645,7 +645,10 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             *p0 = *p1 & *p2;
             break;
         case FN_SRA: // sra rd,rt,sa ; R Format
-            break;
+            *p0 = *p1 >> imm;
+            if (SIGN_BIT (*p0, 32) != SIGN_BIT(*p1, 32)); // == SIGN_BIT (p1, 32))
+                *p0 =  signExtend(*p0, 32 - imm, 32);                    
+            break;            
         case FN_BREAK: // break  ; R Format
             break;
         case FN_SLLV: // sllv rd,rt,rs ; R Format
