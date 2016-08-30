@@ -1,25 +1,39 @@
+#set dword[0x10000000] = [22, 13, 1, 69, 2042]
+mov eax, GreaterThan
+push eax
+push 5
+push 0x10000000
 
+call SelectionSort
+add esp, 12
+
+#show dword[0x10000000] [5]
+
+mov eax, LessThan
+push eax
+push 5
+push 0x10000000
+
+call SelectionSort
+add esp, 12
+
+#show dword[0x10000000] [5]
+
+#stop
 
 LessThan:
+  xor eax, eax
   mov ebx, [esp+4]
   cmp ebx, dword [esp+8]
-  jl less 
-  mov eax, 0
-  ret 
-less: 
-  mov eax, 1
+  setl al
   ret
 
 GreaterThan:
+  xor eax, eax
   mov ebx, [esp+4]
   cmp ebx, dword [esp+8]
-  jg greater 
-  mov eax, 0
-  ret 
-greater: 
-  mov eax, 1
+  setg al
   ret
-
 
 ;array [ebp+8]
 ;number_of_elements [ebp+12]
@@ -36,7 +50,7 @@ SelectionSort:
     mov dword [ebp-4], 0
 
 for1: 
-    mov ebx, dword [ebp-8] 
+    mov ebx, dword [ebp-4] 
     cmp ebx, dword [ebp+12]
     jge endfor1
     mov edx, dword[ebp-4]
@@ -71,6 +85,26 @@ incfor2:
     jmp for2
       
 endfor2:
+    mov eax, [ebp-4]
+    mov ebx, [ebp+8]
+    mov ecx, [ebx+eax*4]
+    
+    mov dword[ebp-16], ecx
+    
+    mov ecx, [ebp-12]
+    mov edx, [ebx+ecx*4]
+    
+    mov dword[ebx+eax*4], edx
+    
+    mov eax, [ebp-16]
+    mov dword[ebx+ecx*4], eax
+    
+    inc dword[ebp-4]
+    jmp for1
+    
+endfor1:    
+    leave
+    ret
     
 
 
