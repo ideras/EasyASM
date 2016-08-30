@@ -778,7 +778,7 @@ IMPLEMENT_INSTRUCTION(Mul) {
             }
             
             result.address = R_AX;
-            result.bitSize = BS_8;
+            result.bitSize = BS_16;
             break;
         }
         case BS_16: {
@@ -1407,7 +1407,7 @@ IMPLEMENT_INSTRUCTION(Setle) {
     bool sf = sim->isFlagSet(SF_MASK);
     bool of = sim->isFlagSet(OF_MASK);
     
-    if ( !a_ref.assign((zf && sf != of)? 1 : 0) ) {
+    if ( !a_ref.assign((zf || sf != of)? 1 : 0) ) {
         return false;
     }
     
