@@ -1,6 +1,16 @@
-EasyASM
+#Compiled Object Files
 *.o
-/generated/**
+
+#Executables
+*.out
+EasyASM
+
+#Directories
+/generated
+
+#Header files
 mips32_parser.h
 x86_parser.h
-*.out
+
+#Netbeans project
+nbproject/
