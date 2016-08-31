@@ -208,8 +208,7 @@ int Mips32Lexer::getNextToken()
                     } else {
                         ungetChar(ch);
 
-                        tokenInfo.tokenLexeme[0] = prevCh;
-                        tokenInfo.tokenLexeme[1] = '\0';
+						tokenInfo.tokenLexeme += prevCh;
                         tokenInfo.intValue = prevCh - '0';
 
                         return MTK_DEC_CONSTANT;

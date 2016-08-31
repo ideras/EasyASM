@@ -39,7 +39,8 @@ extern int error;
 %name Mips32Parse
 
 %syntax_error {
-    string strErr = Mips32Lexer::getTokenString(yymajor, TOKEN);
+	string strErr = Mips32Lexer::getTokenString(yymajor, TOKEN);
+	ctx->error ++;
     reportError("Line %d: Syntax error. Unexpected %s\n", TOKEN->line, strErr.c_str());
 }   
 
