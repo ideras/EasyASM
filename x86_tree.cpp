@@ -829,11 +829,110 @@ IMPLEMENT_INSTRUCTION(Mul) {
 }
 
 IMPLEMENT_INSTRUCTION(Div) {
-    UNUSED(sim);
-    UNUSED(result);
+    
+    if (!arg->isA(XARG_REGISTER) && !arg->isA(XARG_MEMREF)) {
+        reportError("Invalid arguments '%s' in Div instruction\n", arg->toString().c_str());
+        return false;
+    }
+    
+    XReference a_ref;
+    
+    if (!arg->getReference(sim, a_ref))
+        return false;
+    
+    uint32_t arg_value, eflags = 0;
+    
+    if (!a_ref.deref(arg_value))
+        return false;
 
-    reportError("Div instruction not supported.\n");
-    return false;
+    if (arg_value == 0)
+    {
+        reportError("Divide error in Div instruction, divide by zero not supported.\n");
+        return false;
+    }
+    
+    result.type = RT_Reg;
+    result.sim = sim;
+
+    switch(a_ref.bitSize){
+        case BS_8:{
+            uint32_t temp, reg_ax;
+            
+            sim->getRegValue(R_AX, reg_ax);
+            
+            temp = reg_ax / arg_value;
+
+            if (temp > 0xFF)
+            {
+                reportError("Divide error Maximum Quotient: 2^8 - 1\n");
+                return false;
+            }
+
+            temp |= (reg_ax % arg_value) << BS_8;
+
+            arg_value = temp & 0xFFFF;
+            sim->setRegValue(R_AX, arg_value);
+            
+            result.address = R_AL;
+            result.bitSize = BS_8;
+            break;
+        }
+        case BS_16:{
+            uint32_t reg_dx, reg_ax, reg_dx_ax;
+
+            sim->getRegValue(R_DX,reg_dx);
+            sim->getRegValue(R_AX,reg_ax);
+
+            reg_dx_ax = (reg_dx << BS_16) | reg_ax;
+
+            reg_ax = reg_dx_ax / arg_value;
+
+            if (reg_ax > 0xFFFF)
+            {
+                reportError("Divide error Maximum Quotient: 2^16 - 1\n");
+                return false;
+            }
+
+            reg_dx = reg_dx_ax % arg_value;
+
+            sim->setRegValue(R_AX, reg_ax);
+            sim->setRegValue(R_DX, reg_dx);
+
+            result.address = R_AX;
+            result.bitSize = BS_16;
+            
+            break;
+        }
+        case BS_32:{
+            uint64_t reg_edx_eax;
+            uint32_t reg_edx, reg_eax;
+
+            sim->getRegValue(R_EDX,reg_edx);
+            sim->getRegValue(R_EAX,reg_eax);
+
+            reg_edx_eax = ((uint64_t)reg_edx << BS_32) | reg_eax;
+
+            reg_eax = reg_edx_eax / arg_value;
+
+            if (reg_eax > 0xFFFFFFFF)
+            {
+                reportError("Divide error Maximum Quotient: 2^32 - 1\n");
+                return false;
+            }
+
+            reg_edx = reg_edx_eax % arg_value;
+
+            sim->setRegValue(R_EAX, reg_eax);
+            sim->setRegValue(R_EDX, reg_edx);
+
+            result.address = R_EAX;
+            result.bitSize = BS_32;
+
+            break;
+        }
+    }
+
+    return true;
 }
 
 IMPLEMENT_INSTRUCTION(Inc) {
