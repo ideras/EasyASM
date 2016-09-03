@@ -602,10 +602,94 @@ IMPLEMENT_INSTRUCTION(Leave) {
 }
 
 IMPLEMENT_INSTRUCTION(Imul1) {
-    UNUSED(result);
+    if (!arg->isA(XARG_REGISTER) && !arg->isA(XARG_MEMREF)) {
+        reportError("Invalid arguments '%s' in iMul instruction\n", arg->toString().c_str());
+        return false;
+    }
 
-    reportError("IMUL instruction with one argument not supported.\n");
-    return false;
+    XReference a_ref;
+
+    if (!arg->getReference(sim,a_ref))
+        return false;
+
+    uint32_t arg_value, eflags = 0;
+    
+    if (!a_ref.deref(arg_value))
+        return false;
+    
+    result.type = RT_Reg;
+    result.sim = sim;
+
+    switch(a_ref.bitSize)
+    {
+        case BS_8:{
+            int32_t temp;
+            uint32_t reg_al, reg_ax;
+            
+            sim->getRegValue(R_AL, reg_al);
+            
+            temp = (int32_t)reg_al * (int32_t)arg_value;
+            reg_ax = temp & 0xFFFF;
+            sim->setRegValue(R_AX, reg_ax);
+            sim->getRegValue(R_AL, reg_al);
+
+            if ( (int32_t)reg_al != (int32_t)reg_ax ) {
+                eflags = (1 << CF_POS) | (1 << OF_POS);
+            }
+            
+            result.address = R_AX;
+            result.bitSize = BS_16;
+            break;
+        }
+        case BS_16:{
+            int32_t temp;
+            uint32_t reg_ax, reg_dx;
+
+            sim->getRegValue(R_AX,reg_ax);
+
+            temp = (int32_t)reg_ax * (int32_t)arg_value;
+
+            reg_ax = temp & 0xFFFF;
+            reg_dx = (temp & (0xFFFF << BS_16)) >> BS_16;
+            sim->setRegValue(R_AX,reg_ax);
+            sim->setRegValue(R_AX,reg_dx);
+
+            if (temp != (int32_t)reg_ax)
+            {
+                eflags = (1 << CF_POS) | (1 << OF_POS);
+            }
+
+            result.address = R_AX;
+            result.bitSize = BS_16;
+
+            break;
+        }
+        case BS_32:{
+            int64_t temp;
+            uint32_t reg_eax, reg_edx;
+
+            sim->getRegValue(R_EAX,reg_eax);
+
+            temp = (int64_t)reg_eax * (int64_t)arg_value;
+
+            reg_eax = temp & 0xFFFFFFFF;
+            reg_edx = ((int64_t)temp & 0xFFFFFFFF00000000) >> BS_32;
+            sim->setRegValue(R_EAX,reg_eax);
+            sim->setRegValue(R_EDX,reg_edx);
+
+            if ((int64_t)temp != (int64_t)reg_eax)
+            {
+                eflags = (1 << CF_POS) | (1 << OF_POS);
+            }
+
+            result.address = R_EAX;
+            result.bitSize = BS_32;
+            break;
+        }
+    }
+
+    sim->setRegValue(R_EFLAGS, eflags);
+    return true;
 }
 
 IMPLEMENT_INSTRUCTION(Imul2) {
