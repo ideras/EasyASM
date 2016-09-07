@@ -685,6 +685,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             hi_lo = (int64_t)( ((int32_t)*p0) * ((int32_t)*p1) );
             break;
         case FN_MULTU: // multu rs, rt ; R Format
+            hi_lo = (uint64_t)( (*p0) * (*p1) );
             break;
         case FN_NOR: // nor rd,rs,rt ; R Format
             *p0 = ~(*p1 | *p2);
