@@ -480,11 +480,11 @@ bool MIPS32Sim::exec(istream *in)
     }
     
     int count = vinst.size();
-	MRtContext *prev_ctx = runtime_context;
+    MRtContext *prev_ctx = runtime_context;
     MRtContext ctx;
-	bool result = true;
+    bool result = true;
 
-	runtime_context = &ctx;
+    runtime_context = &ctx;
 
     ctx.pc = 0;
     ctx.stop = false;
@@ -494,7 +494,7 @@ bool MIPS32Sim::exec(istream *in)
 	ctx.line = inst->line;
         if (!execInstruction(inst, ctx)) {
             result = false;
-			break;
+            break;
         }
 
         if (ctx.stop) break;
@@ -646,7 +646,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             break;
         case FN_SRA: // sra rd,rt,sa ; R Format
             *p0 = *p1 >> imm;
-            if (SIGN_BIT (*p0, 32) != SIGN_BIT(*p1, 32)); // == SIGN_BIT (p1, 32))
+            if (SIGN_BIT (*p0, 32) != SIGN_BIT(*p1, 32)) // == SIGN_BIT (p1, 32))
                 *p0 =  signExtend(*p0, 32 - imm, 32);                    
             break;            
         case FN_BREAK: // break  ; R Format

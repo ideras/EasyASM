@@ -23,7 +23,15 @@ string convertToString(T value)
     return os.str() ;
 }
 
-enum PrintFormat {F_SignedDecimal, F_UnsignedDecimal, F_Hexadecimal, F_Octal, F_Binary, F_Unspecified};
+enum PrintFormat {
+    F_SignedDecimal, 
+    F_UnsignedDecimal, 
+    F_Hexadecimal, 
+    F_Octal, 
+    F_Binary, 
+    F_Ascii, 
+    F_Unspecified
+};
 
 uint32_t signExtend(uint32_t value, int inBitSize, int outBitSize);
 void printNumber(uint32_t value, int bitSize, PrintFormat format);

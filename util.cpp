@@ -58,6 +58,10 @@ void printNumber(uint32_t value, int bitSize, PrintFormat format)
             cout << s;
             break;
         }
+        case F_Ascii: {
+            printf("%c", (char)value);
+            break;
+        }
         default:
             break;
     }
