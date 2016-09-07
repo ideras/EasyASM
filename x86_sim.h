@@ -136,9 +136,6 @@ public:
     void updateFlags(uint8_t op, uint8_t sign1, uint8_t sign2, uint32_t arg1, uint32_t arg2, uint32_t result, XBitSize bitSize);
 
     bool isFlagSet(unsigned int flags) { return (gpr[R_EFLAGS] & flags) != 0; }
-    bool showRegValue(int regId, PrintFormat format);
-    bool showMemValue(uint32_t vaddr, XBitSize bitSize, PrintFormat format);
-    void showFlags();
     
     static inline const char *sizeDirectiveToString(XSizeDirective sd) {
         switch (sd) {

@@ -91,6 +91,7 @@ data_format(R) ::= XCKW_SIGNED fmt_decimal.   { R = F_SignedDecimal; }
 data_format(R) ::= XCKW_UNSIGNED fmt_decimal. { R = F_UnsignedDecimal; }
 data_format(R) ::= XCKW_BIN.                  { R = F_Binary; }
 data_format(R) ::= XCKW_OCT.                  { R = F_Octal; }
+data_format(R) ::= XCKW_ASCII.                { R = F_Ascii; }
 
 fmt_decimal ::= XCKW_DEC.
 fmt_decimal ::= XKW_DEC.
@@ -244,3 +245,4 @@ constant(R) ::= XTK_OP_MINUS XTK_DEC_CONSTANT(C).  { R = -1*C->intValue; }
 constant(R) ::= XTK_HEX_CONSTANT(C).  { R = C->intValue; }
 constant(R) ::= XTK_BIN_CONSTANT(C).  { R = C->intValue; }
 constant(R) ::= XTK_OCT_CONSTANT(C).  { R = C->intValue; }
+constant(R) ::= XTK_CHAR_CONSTANT(C). { R = C->intValue; }

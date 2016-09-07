@@ -128,41 +128,6 @@ bool X86Sim::setRegValue(int regId, uint32_t value)
     return true;
 }
 
-bool X86Sim::showRegValue(int regId, PrintFormat format)
-{
-    uint32_t value;
-
-    if (!getRegValue(regId, value))
-        return false;
-
-    XBitSize bs;
-
-    if ((regId >= R_EAX) && (regId <= R_EFLAGS)) {
-        bs = BS_32;
-    }
-    else if ((regId >= R_AX) && (regId <= R_DX)) {
-        bs = BS_16;
-    }
-    else if ((regId >= R_AL) && (regId <= R_DH)) {
-        bs = BS_8;
-    } else {
-        return false;
-    }
-
-    if ((regId == R_EFLAGS) && format == F_Unspecified) {
-        cout << xreg[regId] << ": ";
-        showFlags();
-    }
-    else {
-        cout << xreg[regId] << " = ";
-        printNumber(value, bs, format);
-    }
-
-    cout << endl;
-
-    return true;
-}
-
 bool X86Sim::readMem(uint32_t vaddr, uint32_t &result, XBitSize bitSize)
 {
     uint8_t *pmem = getMemPtr(vaddr);
@@ -214,20 +179,6 @@ bool X86Sim::writeMem(uint32_t vaddr, uint32_t value, XBitSize bitSize)
         default:
             return false;
     }
-
-    return true;
-}
-
-bool X86Sim::showMemValue(uint32_t vaddr, XBitSize bitSize, PrintFormat format)
-{
-    uint32_t value;
-
-    if (!readMem(vaddr, value, bitSize))
-        return false;
-
-    printf("%s [0x%X] = ", sizeDirectiveToString(bitSize), vaddr);
-    printNumber(value, bitSize, format);
-    printf("\n");
 
     return true;
 }
@@ -320,7 +271,6 @@ bool X86Sim::exec(istream *in)
 {
     XRtContext rt_ctx, *old_rt_ctx;
     XParserContext parser_ctx;
-    
     
     old_rt_ctx = runtime_context;
     xpool = &(parser_ctx.parser_pool);
@@ -482,18 +432,6 @@ bool X86Sim::doOperation(unsigned char op, XReference &ref1, uint32_t value2)
     }
 
     return true;
-}
-
-void X86Sim::showFlags()
-{
-    uint32_t value = this->gpr[R_EFLAGS];
-
-    cout << "(CF=" << ((value & CF_MASK) != 0) << ", "
-         << "PF=" << ((value & PF_MASK) != 0) << ", "
-         << "AF=" << ((value & AF_MASK) != 0) << ", "
-         << "ZF=" << ((value & ZF_MASK) != 0) << ", "
-         << "SF=" << ((value & SF_MASK) != 0) << ", "
-         << "OF=" << ((value & OF_MASK) != 0) << ")";
 }
 
 bool X86Sim::translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr)

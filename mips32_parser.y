@@ -120,3 +120,4 @@ constant(R) ::= MTK_DEC_CONSTANT(C).  { R = C->intValue; }
 constant(R) ::= MTK_OP_MINUS MTK_DEC_CONSTANT(C).  { R = -1*C->intValue; }
 constant(R) ::= MTK_HEX_CONSTANT(C).  { R = C->intValue; }
 constant(R) ::= MTK_BIN_CONSTANT(C).  { R = C->intValue; }
+constant(R) ::= MTK_CHAR_CONSTANT(C). { R = C->intValue; }

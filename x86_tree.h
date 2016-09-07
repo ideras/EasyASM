@@ -205,9 +205,9 @@ public:
         string code;
 
         switch (sizeDirective) {
-            case SD_BytePtr: code = "byte ptr "; break;
-            case SD_WordPtr: code = "word ptr "; break;
-            case SD_DWordPtr: code = "dword ptr "; break;
+            case SD_BytePtr: code = "byte "; break;
+            case SD_WordPtr: code = "word "; break;
+            case SD_DWordPtr: code = "dword "; break;
         }
 
         ss << code << "[" << expr->toString() << "]";

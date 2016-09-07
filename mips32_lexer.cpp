@@ -140,7 +140,20 @@ int Mips32Lexer::getNextToken()
                 
                 return MSTR_LITERAL;
             }
-
+            case '\'': {
+                tkText.clear();
+                ch = nextChar();
+                APPEND_SEQUENCE(ch != '\'', tkText);
+                ch = nextChar();
+                
+                if (tkText.length() != 1) {
+                    reportError("Invalid character constant '%s'\n", tkText.c_str());
+                }
+                tokenInfo.set(tkText, currentLine);
+                tokenInfo.intValue = (int)tkText[0];
+                
+                return MTK_CHAR_CONSTANT;
+            }
             case '#': {
                 tkText.clear();
                 

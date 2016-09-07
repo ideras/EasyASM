@@ -42,6 +42,7 @@ static XKeyword kw[] = {
     {"unsigned", XCKW_UNSIGNED },
     {"binary", XCKW_BIN },
     {"octal", XCKW_OCT },
+    {"ascii", XCKW_ASCII},
     {"mov", XKW_MOV},
     {"movzx", XKW_MOVZX},
     {"movsx", XKW_MOVSX},
@@ -215,6 +216,20 @@ int X86Lexer::getNextToken()
                 tokenInfo.set(tkText, currentLine);
                 
                 return XSTR_LITERAL;
+            }
+            case '\'': {
+                tkText.clear();
+                ch = nextChar();
+                APPEND_SEQUENCE(ch != '\'', tkText);
+                ch = nextChar();
+                
+                if (tkText.length() != 1) {
+                    reportError("Invalid character constant '%s'\n", tkText.c_str());
+                }
+                tokenInfo.set(tkText, currentLine);
+                tokenInfo.intValue = (int)tkText[0];
+                
+                return XTK_CHAR_CONSTANT;
             }
             case '#': {
                 tkText.clear();
