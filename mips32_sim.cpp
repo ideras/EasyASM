@@ -655,12 +655,16 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             break;
         case FN_DIV: // div rs,rt ; R Format
             hi_lo = ((int32_t)*p0 / (int32_t)*p1);
-            hi_lo &=  0x00000000FFFFFFFF;
+            hi_lo &= 0x00000000FFFFFFFF;
             hi_lo = (((uint64_t) ((int32_t)*p0 % (int32_t)*p1)) << 32) | hi_lo;
             break;
         case FN_SRLV: // srlv rd,rt,rs ; R Format
             break;
         case FN_DIVU: // divu rs,rt ; R Format
+            hi_lo = *p0 / *p1;
+            hi_lo &= 0x00000000FFFFFFFF;
+            hi_lo = ((uint64_t)(*p0 % *p1) << 32) | hi_lo;
+            printf("%u\n", (*p0 % *p1)); 
             break;
         case FN_SRAV: // srav rd,rt,rs ; R Format
             break;
