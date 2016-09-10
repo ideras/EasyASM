@@ -623,8 +623,7 @@ IMPLEMENT_INSTRUCTION(Imul1) {
     result.type = RT_Reg;
     result.sim = sim;
 
-    switch(a_ref.bitSize)
-    {
+    switch(a_ref.bitSize) {
         case BS_8:{
             int32_t temp;
             uint32_t reg_al, reg_ax;
@@ -653,12 +652,11 @@ IMPLEMENT_INSTRUCTION(Imul1) {
             temp = (int32_t)reg_ax * (int32_t)arg_value;
 
             reg_ax = temp & 0xFFFF;
-            reg_dx = (temp & (0xFFFF << BS_16)) >> BS_16;
+            reg_dx = (temp & (0xFFFF << 16)) >> 16;
             sim->setRegValue(R_AX,reg_ax);
             sim->setRegValue(R_AX,reg_dx);
 
-            if (temp != (int32_t)reg_ax)
-            {
+            if (temp != (int32_t)reg_ax) {
                 eflags = (1 << CF_POS) | (1 << OF_POS);
             }
 
@@ -676,12 +674,11 @@ IMPLEMENT_INSTRUCTION(Imul1) {
             temp = (int64_t)reg_eax * (int64_t)arg_value;
 
             reg_eax = temp & 0xFFFFFFFF;
-            reg_edx = ((int64_t)temp & 0xFFFFFFFF00000000) >> BS_32;
+            reg_edx = ((int64_t)temp & 0xFFFFFFFF00000000) >> 32;
             sim->setRegValue(R_EAX,reg_eax);
             sim->setRegValue(R_EDX,reg_edx);
 
-            if ((int64_t)temp != (int64_t)reg_eax)
-            {
+            if ((int64_t)temp != (int64_t)reg_eax) {
                 eflags = (1 << CF_POS) | (1 << OF_POS);
             }
 
@@ -935,8 +932,7 @@ IMPLEMENT_INSTRUCTION(Div) {
     if (!a_ref.deref(arg_value))
         return false;
 
-    if (arg_value == 0)
-    {
+    if (arg_value == 0) {
         reportError("Divide error in Div instruction, divide by zero not supported.\n");
         return false;
     }
@@ -952,13 +948,12 @@ IMPLEMENT_INSTRUCTION(Div) {
             
             temp = reg_ax / arg_value;
 
-            if (temp > 0xFF)
-            {
+            if (temp > 0xFF) {
                 reportError("Divide error Maximum Quotient: 2^8 - 1\n");
                 return false;
             }
 
-            temp |= (reg_ax % arg_value) << BS_8;
+            temp |= (reg_ax % arg_value) << 8;
 
             arg_value = temp & 0xFFFF;
             sim->setRegValue(R_AX, arg_value);
@@ -973,12 +968,11 @@ IMPLEMENT_INSTRUCTION(Div) {
             sim->getRegValue(R_DX,reg_dx);
             sim->getRegValue(R_AX,reg_ax);
 
-            reg_dx_ax = (reg_dx << BS_16) | reg_ax;
+            reg_dx_ax = (reg_dx << 16) | reg_ax;
 
             reg_ax = reg_dx_ax / arg_value;
 
-            if (reg_ax > 0xFFFF)
-            {
+            if (reg_ax > 0xFFFF) {
                 reportError("Divide error Maximum Quotient: 2^16 - 1\n");
                 return false;
             }
@@ -1000,12 +994,11 @@ IMPLEMENT_INSTRUCTION(Div) {
             sim->getRegValue(R_EDX,reg_edx);
             sim->getRegValue(R_EAX,reg_eax);
 
-            reg_edx_eax = ((uint64_t)reg_edx << BS_32) | reg_eax;
+            reg_edx_eax = ((uint64_t)reg_edx << 32) | reg_eax;
 
             reg_eax = reg_edx_eax / arg_value;
 
-            if (reg_eax > 0xFFFFFFFF)
-            {
+            if (reg_eax > 0xFFFFFFFF) {
                 reportError("Divide error Maximum Quotient: 2^32 - 1\n");
                 return false;
             }
