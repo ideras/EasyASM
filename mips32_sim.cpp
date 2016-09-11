@@ -99,13 +99,6 @@ void *Mips32ParseAlloc(void *(*mallocProc)(size_t));
 void Mips32ParseFree(void *p, void (*freeProc)(void*));
 void Mips32Parse(void *yyp, int yymajor, TokenInfo *yyminor, MParserContext *ctx);
 
-const char *mips32_getRegisterName(int index) {
-    if (index >= 0 && index <= 31)
-        return reg_names[index];
-    else
-        return NULL;
-}
-
 static int _getRegisterIndex(const char *name, const char *reg_names[], int size)
 {
     for (int i = 0; i<size; i++) {
@@ -137,6 +130,14 @@ MIPS32Sim::MIPS32Sim()
     reg[GP_INDEX] = M_VIRTUAL_GLOBAL_START_ADDR;
     stack_start_address = M_VIRTUAL_STACK_END_ADDR - (M_STACK_SIZE_WORDS * 4);
 	runtime_context = NULL;
+}
+
+const char *MIPS32Sim::getRegisterName(int regIndex)
+{
+    if (regIndex >= 0 && regIndex <= 31)
+        return reg_names[regIndex];
+    else
+        return NULL;
 }
 
 bool MIPS32Sim::translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr)
@@ -491,7 +492,7 @@ bool MIPS32Sim::exec(istream *in)
     while (1) {
         MInstruction *inst = vinst[ctx.pc];
         
-	ctx.line = inst->line;
+        ctx.line = inst->line;
         if (!execInstruction(inst, ctx)) {
             result = false;
             break;
@@ -553,7 +554,6 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
 
     int rd; //Index of destination register
     uint32_t *p0, *p1, *p2; //Maximum 3 registers arguments
-    uint32_t value;
     uint32_t imm; //Immediate argument value
 
     rd = values[0];
@@ -838,20 +838,17 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             break;
     }
     
-    value = reg[rd];
+	last_result.address = rd;
+	last_result.refType = MRT_Reg;
     
-    if (!ctx.silent_mode) {
-        printf("%s = %d %u 0x%X\n", mips32_getRegisterName(rd), (int)value, value, value);
-    }
-
-    return true;
+	return true;
 }
 
 void MIPS32Sim::showRegisters()
 {
     printf("\nRegister\tHexadecimal\tDecimal\n");
     for (int i=0; i<32; i++) {
-        printf("%s\t\t%08X\t%d\n", mips32_getRegisterName(i), reg[i], reg[i]);
+        printf("%s\t\t%08X\t%d\n", getRegisterName(i), reg[i], reg[i]);
     }
 }
 

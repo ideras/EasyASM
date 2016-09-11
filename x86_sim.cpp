@@ -27,6 +27,11 @@ bool XReference::deref(uint32_t &value)
     switch (type) {
             case RT_Reg: return sim->getRegValue(address, value);
             case RT_Mem: return sim->readMem(address, value, bitSize);
+            case RT_PMem: {
+                value = (uint32_t)sim->getMemPtr(address);
+             
+                return value != 0;
+            }
             case RT_Const: value = address; break;
             default:
                 return false;

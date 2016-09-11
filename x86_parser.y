@@ -29,6 +29,7 @@ void reportError(const char *format, ...);
 %type register32 {XArgument *}
 %type memory {XArgument *}
 %type opt_argument {XArgument *}
+%type call_argument {XArgument *}
 %type address_ref  {XAddrExpr *}
 %type address_expr {XAddrExpr *}
 %type address_term {XAddrExpr *}
@@ -43,6 +44,7 @@ void reportError(const char *format, ...);
 %type r_value {list<int> *}
 %type constant_list {list<int> *}
 %type opt_count {int}
+%type tag {string *}
    
 %syntax_error {
     string strErr = X86Lexer::getTokenString(yymajor, TOKEN);
@@ -59,9 +61,12 @@ statements ::= statement(S) .                   { ctx->input_list.push_back((XIn
 
 statement(R) ::= instruction(I).  { R = I; }
 statement(R) ::= command(C).     { R = C; }
-statement(R)::= XTK_ID(I) XTK_COLON. { R = new XInstTagged(I->tokenLexeme, NULL); R->line = I->line; }
-statement(R)::= XTK_ID(I) XTK_COLON instruction(T). { R = new XInstTagged(I->tokenLexeme, (XInstruction *)T); R->line = I->line; }
-statement(R)::= XTK_ID(I) XTK_COLON command(C). { R = new XInstTagged(I->tokenLexeme, (XInstruction *)C); R->line = I->line; }
+statement(R)::= tag(L) XTK_COLON(C). { R = new XInstTagged(*L, NULL); R->line = C->line; delete L; }
+statement(R)::= tag(L) XTK_COLON(C) instruction(T). { R = new XInstTagged(*L, (XInstruction *)T); R->line = C->line; delete L; }
+statement(R)::= tag(L) XTK_COLON(C) command(CMD). { R = new XInstTagged(*L, (XInstruction *)CMD); R->line = C->line; delete L; }
+
+tag(R) ::= XTK_ID(I). { R = new string(I->tokenLexeme); }
+tag(R) ::= XTK_DOT XTK_ID(I). { R = new string("." + I->tokenLexeme); }
 
 command(R) ::= XCKW_SET(N) cmd_argument(A) XTK_OP_EQUAL r_value(V).  { R = new XCmdSet(A, *V); delete V; R->line = N->line; }
 command(R) ::= XCKW_SHOW(N) cmd_argument(A) opt_data_format(F).  { R = new XCmdShow(A, F); R->line = N->line; }
@@ -140,7 +145,7 @@ instruction(R) ::= XKW_JBE(N) argument(A1).                            { R = new
 instruction(R) ::= XKW_JNA(N) argument(A1).                            { R = new XI_Jbe(A1); R->line = N->line; }
 instruction(R) ::= XKW_JA(N) argument(A1).                             { R = new XI_Ja(A1); R->line = N->line; }
 instruction(R) ::= XKW_JNBE(N) argument(A1).                           { R = new XI_Ja(A1); R->line = N->line; }
-instruction(R) ::= XKW_CALL(N) argument(A1).                           { R = new XI_Call(A1); R->line = N->line; }
+instruction(R) ::= XKW_CALL(N) call_argument(A1).                      { R = new XI_Call(A1); R->line = N->line; }
 instruction(R) ::= XKW_RET(N) opt_argument(A1).                        { R = new XI_Ret(A1); R->line = N->line; }
 instruction(R) ::= XKW_SETA(N) argument(A1).    { R = new XI_Seta(A1); R->line = N->line; }
 instruction(R) ::= XKW_SETAE(N) argument(A1).   { R = new XI_Setae(A1); R->line = N->line; }
@@ -178,10 +183,15 @@ instruction(R) ::= XKW_LEAVE(N).                { R = new XI_Leave(); R->line = 
 opt_argument(R) ::= argument(A). { R = A; }
 opt_argument(R) ::=  .           { R = NULL; }
 
+call_argument(R) ::= argument(A). { R = A; }
+call_argument(R) ::= XTK_AT XTK_ID(I1) XTK_DOT XTK_ID(I2). { R = new XArgExternalFuntionName(I1->tokenLexeme, I2->tokenLexeme); }
+
 argument(R) ::= register(R1). { R = R1; }
 argument(R) ::= memory(M).    { R = M; }
 argument(R) ::= constant(C).  { R = new XArgConstant((unsigned int)C); }
 argument(R) ::= XTK_ID(I).        { R = new XArgIdentifier(I->tokenLexeme); }
+argument(R) ::= XTK_DOT XTK_ID(I).{ R = new XArgIdentifier("." + I->tokenLexeme); }
+argument(R) ::= XCKW_PADDR XTK_LPAREN address_expr(E) XTK_RPAREN. { R = new XArgPhyAddress(E); }
 
 register(R) ::= register8(R1).     { R = R1; }
 register(R) ::= register16(R1).    { R = R1; }

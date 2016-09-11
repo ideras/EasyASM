@@ -70,7 +70,7 @@ enum XRegister {R_EAX, R_EBX, R_ECX, R_EDX, R_ESI, R_EDI, R_ESP, R_EBP, R_EFLAGS
                 R_AX, R_BX, R_CX, R_DX,
                 R_AL, R_AH, R_BL, R_BH, R_CL, R_CH, R_DL, R_DH};
 
-enum XRefType { RT_Reg, RT_Mem, RT_Const, RT_None };
+enum XRefType { RT_Reg, RT_PMem, RT_Mem, RT_Const, RT_None };
 
 class X86Sim;
 
@@ -103,6 +103,9 @@ struct XRtContext
 
 class X86Sim
 {    
+    friend class XArgPhyAddress;
+    friend struct XReference;
+    friend class XI_Call;
 private:
     bool parseFile(istream *in, XParserContext &ctx);
     bool resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &vinst, map<string, uint32_t> &lbl_map);

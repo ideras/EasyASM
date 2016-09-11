@@ -51,7 +51,16 @@ void processLines(list<string> &lines)
     }
     
     if (simMips32) {
-        msim.exec(&in);
+        if (!msim.exec(&in))
+			return;
+
+		MReference result = msim.getLastResult();
+
+		if (result.refType != MRT_None) {
+			uint32_t value = msim.reg[result.address];
+
+			printf("%s = 0x%X %d %u\n", MIPS32Sim::getRegisterName(result.address), value, (int32_t)value, value);
+		}
     } else {
 
         if (!xsim.exec(&in))
@@ -91,7 +100,7 @@ void processLines(list<string> &lines)
 
 int main(int argc, char *argv[])
 {
-    const char *prompt1 = "Inst> ";
+    const char *prompt1 = "ASM> ";
     const char *prompt;
     char *line;
     list<string> lines;
@@ -115,11 +124,13 @@ int main(int argc, char *argv[])
         cout << "Global base address = 0x" << hex << M_VIRTUAL_GLOBAL_START_ADDR << dec << endl;
         cout << "Stack pointer address = 0x" << hex << M_VIRTUAL_STACK_END_ADDR << dec << endl;
         cout << "Global memory size = " << M_GLOBAL_MEM_WORD_COUNT << " words" << endl;
+		cout << "Stack size         = " << M_STACK_SIZE_WORDS << " words" << endl << endl;
     } else {
         cout << "--- EasyASM x86 mode (little endian) ----" << endl << endl;
         cout << "Global base address = 0x" << hex << X_VIRTUAL_GLOBAL_START_ADDR << dec << endl;
         cout << "Stack pointer address = 0x" << hex << X_VIRTUAL_STACK_END_ADDR << dec << endl;
-        cout << "Global memory size = " << X_GLOBAL_MEM_WORD_COUNT << " words" << endl;
+        cout << "Global memory size = " << X_GLOBAL_MEM_WORD_COUNT << " dwords" << endl;
+		cout << "Stack size         = " << X_STACK_SIZE_WORDS << " dwords" << endl << endl;
     }
 
     prompt = prompt1;

@@ -39,6 +39,8 @@ void reportError(const char *format, ...);
 #define XARG_MEMREF      102
 #define XARG_IDENTIFIER  103
 #define XARG_CONST       104
+#define XARG_PADDR       105
+#define XARG_EXT_FUNC    106
 
 /* Memory Reference kinds */
 #define XADDR_EXPR_REG                  110
@@ -247,6 +249,42 @@ public:
 
 public:
     string name;
+};
+
+class XArgPhyAddress: public XArgument
+{
+public:
+    XArgPhyAddress(XAddrExpr *expr) {
+        this->expr = expr;
+    }
+
+    int getKind() { return XARG_PADDR; }
+    string toString() { return "paddr(" + expr->toString() + ")"; }
+
+    bool eval(X86Sim *sim, int resultSize, uint8_t flags, uint32_t &result);
+    bool getReference(X86Sim *sim, XReference &ref);
+
+public:
+    XAddrExpr *expr;
+};
+
+class XArgExternalFuntionName: public XArgument
+{
+public:
+    XArgExternalFuntionName(string libName, string funcName) {
+        this->libName = libName;
+        this->funcName = funcName;
+    }
+
+    int getKind() { return XARG_EXT_FUNC; }
+    string toString() { return "@" + libName + "." + funcName; }
+
+    bool eval(X86Sim *xsim, int resultSize, uint8_t flags, uint32_t &result) { return false; }
+    bool getReference(X86Sim *, XReference &) { return false; }
+
+public:
+    string libName;
+    string funcName;
 };
 
 class XArgConstant: public XArgument

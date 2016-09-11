@@ -33,8 +33,6 @@ struct XKeyword {
 };
 
 static XKeyword kw[] = {
-    {"set", XCKW_SET},
-    {"show", XCKW_SHOW },
     {"hexadecimal", XCKW_HEX },
     {"hex", XCKW_HEX },
     {"decimal", XCKW_DEC },
@@ -137,6 +135,7 @@ static XKeyword x_commands[] = {
 	{"set", XCKW_SET },
 	{"exec", XCKW_EXEC },
         {"stop", XCKW_STOP },
+	{"paddr", XCKW_PADDR},
 };
 
 const int KWCmdCount = sizeof(x_commands)/sizeof(XKeyword);
@@ -181,12 +180,16 @@ int X86Lexer::getNextToken()
             case EOF: RETURN_TOKEN(XTK_EOF);
             case '[': RETURN_TOKEN(XTK_LBRACKET);
             case ']': RETURN_TOKEN(XTK_RBRACKET);
+            case '(': RETURN_TOKEN(XTK_LPAREN);
+            case ')': RETURN_TOKEN(XTK_RPAREN);
             case ',': RETURN_TOKEN(XTK_COMMA);
             case ':': RETURN_TOKEN(XTK_COLON);
             case '-': RETURN_TOKEN(XTK_OP_MINUS);
             case '+': RETURN_TOKEN(XTK_OP_PLUS);
             case '*': RETURN_TOKEN(XTK_OP_MULT);
             case '=': RETURN_TOKEN(XTK_OP_EQUAL);
+            case '@': RETURN_TOKEN(XTK_AT);
+            case '.': RETURN_TOKEN(XTK_DOT);
             case ';': {
                 ch = nextChar();
                 while (ch != '\n' && ch != EOF) {
@@ -239,13 +242,6 @@ int X86Lexer::getNextToken()
                 tokenInfo.set(tkText, currentLine);
                 return lookUpWord(x_commands, KWCmdCount, tkText);
             }
-            case '.': {
-                ch = nextChar();
-                APPEND_SEQUENCE( (isalnum(ch) || ch == '_') && (ch != EOF), tkText );
-                
-                RETURN_TOKEN(XTK_ID);
-            }
-
             default: {
                 if (isdigit(ch)) {
                     char prevCh = ch;
@@ -324,7 +320,10 @@ string X86Lexer::getTokenString(int token, TokenInfo *info)
     case XTK_EOF: tokenName = "end of input"; break;
     case XTK_EOL: tokenName = "end of line"; break;
 
+    case XCKW_EXEC:
+    case XCKW_SET:
     case XCKW_SHOW:
+    case XCKW_PADDR:
     case XCKW_HEX:
     case XCKW_SIGNED:
     case XCKW_UNSIGNED:
@@ -393,6 +392,10 @@ string X86Lexer::getTokenString(int token, TokenInfo *info)
         tokenName = "register";
         break;
     case XTK_COMMA:
+    case XTK_LPAREN:
+    case XTK_RPAREN:
+    case XTK_AT:
+    case XTK_DOT:
     case XTK_LBRACKET:
     case XTK_RBRACKET:
         tokenName = "symbol";
