@@ -134,6 +134,7 @@ static XKeyword x_commands[] = {
 	{"show", XCKW_SHOW },
 	{"set", XCKW_SET },
 	{"exec", XCKW_EXEC },
+        {"debug", XCKW_DEBUG},
         {"stop", XCKW_STOP },
 	{"paddr", XCKW_PADDR},
 };

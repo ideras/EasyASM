@@ -1822,6 +1822,12 @@ bool XCmdExec::exec(X86Sim *sim, XReference &result)
     return success;
 }
 
+bool XCmdDebug::exec(X86Sim *sim, XReference &result)
+{
+    reportError("Debug command is only available in interactive mode.\n");
+    return false;
+}
+
 bool XCmdStop::exec(X86Sim *sim, XReference &result)
 {
     sim->runtime_context->stop = true;

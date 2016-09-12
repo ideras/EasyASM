@@ -49,7 +49,7 @@ void reportError(const char *format, ...);
 %syntax_error {
     string strErr = X86Lexer::getTokenString(yymajor, TOKEN);
     ctx->error++;
-    reportError("Line %d: Syntax error. Unexpected %s\n", TOKEN->line, strErr.c_str());
+    printf("Line %d: Syntax error. Unexpected %s\n", TOKEN->line, strErr.c_str());
 }   
 
 %start_symbol input   
@@ -71,6 +71,7 @@ tag(R) ::= XTK_DOT XTK_ID(I). { R = new string("." + I->tokenLexeme); }
 command(R) ::= XCKW_SET(N) cmd_argument(A) XTK_OP_EQUAL r_value(V).  { R = new XCmdSet(A, *V); delete V; R->line = N->line; }
 command(R) ::= XCKW_SHOW(N) cmd_argument(A) opt_data_format(F).  { R = new XCmdShow(A, F); R->line = N->line; }
 command(R) ::= XCKW_EXEC(N) XSTR_LITERAL(S). { R = new XCmdExec(S->tokenLexeme); R->line = N->line; }
+command(R) ::= XCKW_DEBUG(N) XSTR_LITERAL(S). { R = new XCmdDebug(S->tokenLexeme); R->line = N->line; }
 command(R) ::= XCKW_STOP(N). { R = new XCmdStop(); R->line = N->line; }
 
 r_value(R) ::= constant(C). { R = new list<int>; R->push_back(C); }

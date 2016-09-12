@@ -2,6 +2,7 @@
 #include <sstream>
 #include <map>
 #include "x86_sim.h"
+#include "x86_dbg.h"
 #include "x86_lexer.h"
 #include "x86_tree.h"
 #include "mempool.h"
@@ -59,6 +60,7 @@ X86Sim::X86Sim()
     stack_start_address = X_VIRTUAL_STACK_END_ADDR - (X_STACK_SIZE_WORDS * 4);
     runtime_context = NULL;
     label_map = NULL;
+    dbg = NULL;
 }
 
 bool X86Sim::getRegValue(int regId, uint32_t &value)
@@ -235,12 +237,8 @@ bool X86Sim::parseFile(istream *in, XParserContext &ctx)
     ParseFree(pParser, free);
 
     tk_pool->freeAll();
-    
-    if (ctx.error != 0) {
-        return false;
-    }
-    
-    return true;
+
+    return (ctx.error == 0);
 }
 
 bool X86Sim::resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &vinst, map<string, uint32_t> &lbl_map)
@@ -274,6 +272,11 @@ bool X86Sim::resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &
     
 bool X86Sim::exec(istream *in)
 {
+    if (dbg != NULL) {
+        reportError("The simulator is in debug mode.\n");
+        return false;
+    }
+    
     XRtContext rt_ctx, *old_rt_ctx;
     XParserContext parser_ctx;
     
@@ -323,6 +326,76 @@ bool X86Sim::exec(istream *in)
     label_map = old_label_map;
     
     return result;
+}
+
+bool X86Sim::debug(string asm_file) 
+{
+    if (dbg != NULL) {
+        reportError("The simulator is in debug mode already.\n");
+        return false;
+    }
+    
+    ifstream in;
+    
+    in.open(asm_file.c_str(), ifstream::in|ifstream::binary);
+
+    if (!in.is_open()) {
+        reportError("Cannot open file '%s'\n", asm_file.c_str());
+        return false;
+    }
+    
+    vector<XInstruction *> instList;
+
+    label_map = new map<string, uint32_t>;
+    xpool = new MemPool();
+    
+    if (!loadFile(&in, instList, *label_map)) {
+        delete label_map;
+        delete xpool;
+        
+        return false;
+    }
+    
+    vector<string> sourceLines;
+
+    in.clear();
+    in.seekg(0);
+    
+    if (in.fail()) {
+        cout << "Oops. Fail." << endl;
+        dbg->stop();
+        return false;
+    }
+    
+    while (!in.eof()) {
+        string line;
+        getline(in, line);
+        sourceLines.push_back(line);
+    };
+    
+    runtime_context = new XRtContext;
+    
+    dbg = new X86Debugger(this, instList, xpool);
+    dbg->setSourceLines(sourceLines);
+        
+    in.close();
+    
+    return true;
+}
+
+bool X86Sim::loadFile(istream *in, vector<XInstruction *> &instList, map<string, uint32_t> &labelMap)
+{
+    XParserContext parser_ctx;
+    
+    if (!parseFile(in, parser_ctx)) {
+        return false;
+    }
+    
+    if (!resolveLabels(parser_ctx.input_list, instList, labelMap)) {
+        return false;
+    }
+    
+    return true;
 }
 
 void X86Sim::updateFlags(uint8_t op, uint8_t sign1, uint8_t sign2, uint32_t arg1, uint32_t arg2, uint32_t result, XBitSize bitSize)

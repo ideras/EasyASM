@@ -321,11 +321,10 @@ bool MIPS32Sim::parseFile(istream *in, MParserContext &ctx)
     Mips32Lexer lexer(in);
     TokenInfo *tokenInfo;
     int token;
-	MemPool *prev_pool = mparser_pool;
-	void* pParser = Mips32ParseAlloc (malloc);
+    void* pParser = Mips32ParseAlloc (malloc);
     
     tk_pool = &(ctx.token_pool);
-	mparser_pool = &(ctx.parser_pool);
+    mparser_pool = &(ctx.parser_pool);
 
     while ((token = lexer.getNextToken()) == MTK_EOL);
 
@@ -362,11 +361,11 @@ bool MIPS32Sim::parseFile(istream *in, MParserContext &ctx)
     Mips32Parse(pParser, 0, NULL, &ctx);
     Mips32ParseFree(pParser, free);
 
-	tk_pool->freeAll();
-	tk_pool = NULL;
-	mparser_pool = prev_pool;
+    tk_pool->freeAll();
+    tk_pool = NULL;
+    mparser_pool = NULL;
 
-	return (ctx.error == 0);
+    return (ctx.error == 0);
 }
 
 bool MIPS32Sim::resolveLabels(list<MInstruction *> &linst, vector<MInstruction *> &vinst)
@@ -468,7 +467,7 @@ bool MIPS32Sim::resolveLabels(list<MInstruction *> &linst, vector<MInstruction *
 
 bool MIPS32Sim::exec(istream *in)
 {
-	MParserContext parse_ctx;
+    MParserContext parse_ctx;
 
     if (!parseFile(in, parse_ctx)) {
         return false;

@@ -133,6 +133,7 @@ void reportError(const char *format, ...);
 #define XCMD_Set         901
 #define XCMD_Exec        902
 #define XCMD_Stop        903
+#define XCMD_Debug       904
 
 extern const char *xreg[];
 
@@ -411,7 +412,7 @@ public:
         this->dataFormat = dataFormat;
     }
 
-    string toString() { return "show"; }
+    string toString() { return "#show"; }
     int getKind() { return XCMD_Show; }
     bool exec(X86Sim *sim, XReference &result);
 
@@ -427,7 +428,7 @@ public:
         this->lvalue = lvalue;
     }
 
-    string toString() { return "set"; }
+    string toString() { return "#set"; }
     int getKind() { return XCMD_Set; }
     bool exec(X86Sim *sim, XReference &result);
 
@@ -442,8 +443,22 @@ public:
         this->file_path = file_path;
     }
 
-    string toString() { return "exec"; }
+    string toString() { return "#exec \"" + file_path + "\""; }
     int getKind() { return XCMD_Exec; }
+    bool exec(X86Sim *sim, XReference &result);
+
+public:
+    string file_path;
+};
+
+class XCmdDebug: public XInstruction {
+public:
+    XCmdDebug(string file_path) {
+        this->file_path = file_path;
+    }
+
+    string toString() { return "#debug \"" + file_path + "\""; }
+    int getKind() { return XCMD_Debug; }
     bool exec(X86Sim *sim, XReference &result);
 
 public:
@@ -454,7 +469,7 @@ class XCmdStop: public XInstruction {
 public:
     XCmdStop() { }
 
-    string toString() { return "stop"; }
+    string toString() { return "#stop"; }
     int getKind() { return XCMD_Stop; }
     bool exec(X86Sim *sim, XReference &result);
 };
@@ -486,7 +501,7 @@ public:
     
     string toString() {
         stringstream ss;
-        ss << getName() << arg->toString();
+        ss << getName() << " " << arg->toString();
         return ss.str();
     }
     
@@ -506,7 +521,7 @@ public:
     
     string toString() {
         stringstream ss;
-        ss << getName() << arg1->toString() << "," << arg2->toString();
+        ss << getName() << " " << arg1->toString() << ", " << arg2->toString();
         return ss.str();
     }
     
@@ -528,9 +543,9 @@ public:
     
     string toString() {
         stringstream ss;
-        ss << getName() << arg1->toString() << "," 
-                        << arg2->toString() << "," 
-                        << arg3->toString();
+        ss << getName() << " " << arg1->toString() << ", " 
+                               << arg2->toString() << ", " 
+                               << arg3->toString();
         return ss.str();
     }
     
