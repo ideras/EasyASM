@@ -39,6 +39,8 @@ void reportError(const char *format, ...);
 #define XARG_MEMREF      102
 #define XARG_IDENTIFIER  103
 #define XARG_CONST       104
+#define XARG_PADDR       105
+#define XARG_EXT_FUNC    106
 
 /* Memory Reference kinds */
 #define XADDR_EXPR_REG                  110
@@ -131,6 +133,7 @@ void reportError(const char *format, ...);
 #define XCMD_Set         901
 #define XCMD_Exec        902
 #define XCMD_Stop        903
+#define XCMD_Debug       904
 
 extern const char *xreg[];
 
@@ -247,6 +250,42 @@ public:
 
 public:
     string name;
+};
+
+class XArgPhyAddress: public XArgument
+{
+public:
+    XArgPhyAddress(XAddrExpr *expr) {
+        this->expr = expr;
+    }
+
+    int getKind() { return XARG_PADDR; }
+    string toString() { return "paddr(" + expr->toString() + ")"; }
+
+    bool eval(X86Sim *sim, int resultSize, uint8_t flags, uint32_t &result);
+    bool getReference(X86Sim *sim, XReference &ref);
+
+public:
+    XAddrExpr *expr;
+};
+
+class XArgExternalFuntionName: public XArgument
+{
+public:
+    XArgExternalFuntionName(string libName, string funcName) {
+        this->libName = libName;
+        this->funcName = funcName;
+    }
+
+    int getKind() { return XARG_EXT_FUNC; }
+    string toString() { return "@" + libName + "." + funcName; }
+
+    bool eval(X86Sim *xsim, int resultSize, uint8_t flags, uint32_t &result) { return false; }
+    bool getReference(X86Sim *, XReference &) { return false; }
+
+public:
+    string libName;
+    string funcName;
 };
 
 class XArgConstant: public XArgument
@@ -373,7 +412,7 @@ public:
         this->dataFormat = dataFormat;
     }
 
-    string toString() { return "show"; }
+    string toString() { return "#show"; }
     int getKind() { return XCMD_Show; }
     bool exec(X86Sim *sim, XReference &result);
 
@@ -389,7 +428,7 @@ public:
         this->lvalue = lvalue;
     }
 
-    string toString() { return "set"; }
+    string toString() { return "#set"; }
     int getKind() { return XCMD_Set; }
     bool exec(X86Sim *sim, XReference &result);
 
@@ -404,8 +443,22 @@ public:
         this->file_path = file_path;
     }
 
-    string toString() { return "exec"; }
+    string toString() { return "#exec \"" + file_path + "\""; }
     int getKind() { return XCMD_Exec; }
+    bool exec(X86Sim *sim, XReference &result);
+
+public:
+    string file_path;
+};
+
+class XCmdDebug: public XInstruction {
+public:
+    XCmdDebug(string file_path) {
+        this->file_path = file_path;
+    }
+
+    string toString() { return "#debug \"" + file_path + "\""; }
+    int getKind() { return XCMD_Debug; }
     bool exec(X86Sim *sim, XReference &result);
 
 public:
@@ -416,7 +469,7 @@ class XCmdStop: public XInstruction {
 public:
     XCmdStop() { }
 
-    string toString() { return "stop"; }
+    string toString() { return "#stop"; }
     int getKind() { return XCMD_Stop; }
     bool exec(X86Sim *sim, XReference &result);
 };
@@ -448,7 +501,7 @@ public:
     
     string toString() {
         stringstream ss;
-        ss << getName() << arg->toString();
+        ss << getName() << " " << arg->toString();
         return ss.str();
     }
     
@@ -468,7 +521,7 @@ public:
     
     string toString() {
         stringstream ss;
-        ss << getName() << arg1->toString() << "," << arg2->toString();
+        ss << getName() << " " << arg1->toString() << ", " << arg2->toString();
         return ss.str();
     }
     
@@ -490,9 +543,9 @@ public:
     
     string toString() {
         stringstream ss;
-        ss << getName() << arg1->toString() << "," 
-                        << arg2->toString() << "," 
-                        << arg3->toString();
+        ss << getName() << " " << arg1->toString() << ", " 
+                               << arg2->toString() << ", " 
+                               << arg3->toString();
         return ss.str();
     }
     

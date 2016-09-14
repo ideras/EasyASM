@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string>
 #include <sstream>
+#include <vector>
 
 using namespace std;
 
@@ -36,5 +37,5 @@ enum PrintFormat {
 uint32_t signExtend(uint32_t value, int inBitSize, int outBitSize);
 void printNumber(uint32_t value, int bitSize, PrintFormat format);
 string numberToBinaryString(uint32_t x, int bs);
-
+bool tokenizeString(string str, vector<string> &strList);
 #endif // ARITH_UTIL_H

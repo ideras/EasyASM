@@ -70,7 +70,7 @@ enum XRegister {R_EAX, R_EBX, R_ECX, R_EDX, R_ESI, R_EDI, R_ESP, R_EBP, R_EFLAGS
                 R_AX, R_BX, R_CX, R_DX,
                 R_AL, R_AH, R_BL, R_BH, R_CL, R_CH, R_DL, R_DH};
 
-enum XRefType { RT_Reg, RT_Mem, RT_Const, RT_None };
+enum XRefType { RT_Reg, RT_PMem, RT_Mem, RT_Const, RT_None };
 
 class X86Sim;
 
@@ -101,11 +101,17 @@ struct XRtContext
     bool stop;
 };
 
+class X86Debugger;
+
 class X86Sim
 {    
+    friend class X86Debugger;
+    friend class XArgPhyAddress;
+    friend struct XReference;
+    friend class XI_Call;
 private:
-    bool parseFile(istream *in, XParserContext &ctx);
     bool resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &vinst, map<string, uint32_t> &lbl_map);
+    bool loadFile(istream *in, vector<XInstruction *> &instList, map<string, uint32_t> &labelMap);
     bool translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr);
 
 public:
@@ -127,12 +133,15 @@ public:
         return false;
     }
     
+    X86Debugger *getDebugger() { return dbg; }
     bool getRegValue(int regId, uint32_t &value);
     bool setRegValue(int regId, uint32_t value);
     bool readMem(uint32_t vaddr, uint32_t &result, XBitSize bitSize);
     bool writeMem(uint32_t vaddr, uint32_t value, XBitSize bitSize);
     bool doOperation(unsigned char op, XReference &ref1, uint32_t value2);
+    bool parseFile(istream *in, XParserContext &ctx);
     bool exec(istream *in);
+    bool debug(string asm_file);
     void updateFlags(uint8_t op, uint8_t sign1, uint8_t sign2, uint32_t arg1, uint32_t arg2, uint32_t result, XBitSize bitSize);
 
     bool isFlagSet(unsigned int flags) { return (gpr[R_EFLAGS] & flags) != 0; }
@@ -148,6 +157,7 @@ public:
     }
 
 public:
+    X86Debugger *dbg;
     XRtContext *runtime_context;
     map<string, uint32_t> *label_map;
     

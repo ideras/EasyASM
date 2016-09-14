@@ -23,6 +23,8 @@ void MNode::operator delete(void *ptrb)
 
 bool MCmd_Show::exec(MIPS32Sim *sim)
 {
+	sim->last_result.refType = MRT_None;
+
     if (arg->isA(MARG_REGISTER)) {
         MArgRegister *rarg = (MArgRegister *)arg;
         uint32_t value;
@@ -95,6 +97,8 @@ bool MCmd_Show::exec(MIPS32Sim *sim)
 
 bool MCmd_Set::exec(MIPS32Sim *sim)
 {
+	sim->last_result.refType = MRT_None;
+
     if (arg->isA(MARG_REGISTER)) {
         MArgRegister *rarg = (MArgRegister *)arg;
         uint32_t value = lvalue.front();
@@ -156,6 +160,8 @@ bool MCmd_Exec::exec(MIPS32Sim *sim)
 {
     ifstream in;
     
+	sim->last_result.refType = MRT_None;
+
     in.open(file_path.c_str(), ifstream::in|ifstream::binary);
 
     if (!in.is_open()) {

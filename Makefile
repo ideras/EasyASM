@@ -1,10 +1,10 @@
 CXX = g++
-CPP_FLAGS = -g
+CPP_FLAGS = -fpermissive -g
 CPP_SOURCES = generated/x86_parser.cpp generated/mips32_parser.cpp $(wildcard *.cpp)
 HEADERS = $(wildcard *.h) 
 OBJ = ${CPP_SOURCES:.cpp=.o}
 INCLUDE = .
-LIBS = -ledit
+LIBS = -ledit -ldl
 TARGET = EasyASM
 
 all: ${TARGET}

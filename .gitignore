@@ -1,3 +1,6 @@
+#FUSE temporary files
+.fuse*
+
 #Compiled Object Files
 *.o
 

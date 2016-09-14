@@ -155,7 +155,14 @@ struct MRtContext
     int pc;	  // Program counter	
 	int line; // Source line
     bool stop;
-	bool silent_mode;
+};
+
+enum MRefType { MRT_Mem, MRT_Reg, MRT_None };
+
+struct MReference
+{
+	MRefType refType;
+	uint32_t address;
 };
 
 class MIPS32Sim 
@@ -167,6 +174,8 @@ private:
 public:
     MIPS32Sim();
     
+	static const char *getRegisterName(int regIndex);
+
     int readWord(unsigned int vaddr, uint32_t &result);
     int readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_extend);
     int readByte(unsigned int vaddr, uint32_t &result, bool sign_extend);
@@ -179,6 +188,7 @@ public:
     bool exec(istream *in);
     bool execInstruction(MInstruction *inst, MRtContext &ctx);
     void showRegisters();
+	MReference getLastResult() { return last_result; }
     
     uint32_t reg[32]; //MIPS32 uses 32 registers, 32 bits each one
     uint32_t mem[M_GLOBAL_MEM_WORD_COUNT + M_STACK_SIZE_WORDS]; //Words of physical memory
@@ -187,6 +197,7 @@ public:
 
 public:
 	MRtContext *runtime_context;
+	MReference last_result;
 };
 
 enum MIPS32ArgumentType { M32ARG_Register, M32ARG_Immediate };
