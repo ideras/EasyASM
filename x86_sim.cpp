@@ -516,7 +516,7 @@ bool X86Sim::translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr)
 {
     if (vaddr >= X_VIRTUAL_GLOBAL_START_ADDR && vaddr <= X_VIRTUAL_GLOBAL_END_ADDR) {
         paddr = vaddr - X_VIRTUAL_GLOBAL_START_ADDR;
-    } else if (vaddr >= stack_start_address && vaddr < X_VIRTUAL_STACK_END_ADDR) {
+    } else if (vaddr >= stack_start_address && vaddr <= X_VIRTUAL_STACK_END_ADDR) {
         paddr = (vaddr - stack_start_address) + (X_GLOBAL_MEM_WORD_COUNT * 4);
     } else {
         reportError("Runtime exception: fetch address out of limit 0x%x\n", vaddr);
