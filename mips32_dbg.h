@@ -1,12 +1,13 @@
 /* 
- * File:   x86_dbg.h
+ * File:   mips32_dbg.h
  * Author: ideras
  *
- * Created on September 12, 2016, 10:41 AM
+ * Created on September 12, 2016, 4:52 PM
  */
 
-#ifndef X86_DBG_H
-#define X86_DBG_H
+#ifndef MIPS32_DBG_H
+#define MIPS32_DBG_H
+
 #include <stdint.h>
 #include <fstream>
 #include <list>
@@ -18,13 +19,13 @@
 using namespace std;
 
 class MemPool;
-class XInstruction;
-class X86Sim;
+class MInstruction;
+class MIPS32Sim;
 
-class X86Debugger: public AsmDebugger
+class MIPS32Debugger: public AsmDebugger
 {
 public:    
-    X86Debugger(X86Sim *sim, vector<XInstruction *> instList, MemPool *mPool) {
+    MIPS32Debugger(MIPS32Sim *sim, vector<MInstruction *> instList, MemPool *mPool) {
         this->sim = sim;
         this->instList = instList;
         this->mPool = mPool;
@@ -49,11 +50,11 @@ private:
     bool inBreakpoint;
     bool finished;
     vector<string> sourceLines;
-    vector<XInstruction *> instList;
+    vector<MInstruction *> instList;
     set<int> breakpoints;
-    X86Sim *sim;
+    MIPS32Sim *sim;
     MemPool *mPool;
 };
 
-#endif /* X86_DBG_H */
+#endif /* MIPS32_DBG_H */
 

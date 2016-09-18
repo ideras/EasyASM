@@ -24,7 +24,7 @@ using namespace std;
 const char *getRegisterName(int index);
 
 //Report runtime errors
-void reportError(const char *format, ...)
+void reportRuntimeError(const char *format, ...)
 {
     va_list args;
 
@@ -39,13 +39,26 @@ void reportError(const char *format, ...)
     va_end(args);
 }
 
+void reportError(const char *format, ...)
+{
+    va_list args;
+
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
+
 void debugSession()
 {
-    X86Debugger *dbg = xsim.getDebugger();
+    AsmDebugger *dbg;
 
     char *line;
+    string last_command, curr_command;
     vector<string> strList;
 
+    dbg = (simMips32)? msim.getDebugger() : xsim.getDebugger();
+    
+    last_command = "";
     dbg->start();
     while (1) {
         dbg->showStatus();
@@ -53,16 +66,32 @@ void debugSession()
 
         if (line == NULL) continue;
 
-        if (strcmp(line, "exit") == 0 || strcmp(line, "quit") == 0) {
-            break;
+        if (*line == '\0') {
+            //Repeat last command
+            if (last_command.empty()) continue;
+         
+            curr_command = last_command;
+        } else {
+            curr_command = line;
+            
+            if (curr_command.compare(last_command) != 0) {
+                add_history(line);
+                free(line);
+            }
+            
+            last_command = curr_command;
         }
-
-        if (!tokenizeString(line, strList)) {
+        
+        if (!tokenizeString(curr_command, strList)) {
             continue;
         }
         
         if (strcmp(strList[0].c_str(), "step") == 0) {
-            dbg->next();
+            if (!dbg->next()) {
+                cout << "Debug session terminated due to errors in the program." << endl;
+                dbg->stop();
+                return;
+            }
         } else if (strcmp(strList[0].c_str(), "run") == 0) {
             dbg->run();
         } else if (strcmp(strList[0].c_str(), "stop") == 0) {
@@ -73,36 +102,18 @@ void debugSession()
             if (strList.size() != 2) {
                 cout << "Invalid usage in 'breakpoint' command. Usage breakpoint <line number>." << endl;
             } else {
-                int line = atoi(strList[1].c_str());
-                dbg->addBreakpoint(line);
+                int lineNumber = atoi(strList[1].c_str());
+                dbg->addBreakpoint(lineNumber);
+                cout << "Breakpoint set at line " << lineNumber << endl;
             }
         } else if (strcmp(strList[0].c_str(), "#show") == 0 ||
                    strcmp(strList[0].c_str(), "#set") == 0) {
-            stringstream in;
-            
-            in.str(line);
-            
-            if (simMips32) {
-                //TODO: MIPS32 debugger
-            } else {
-                XParserContext ctx;
-                
-                if (xsim.parseFile(&in, ctx)) {
-                    XInstruction *inst = ctx.input_list.front();
-                    XReference result;
-                    
-                    inst->exec(&xsim, result);
-                } else {
-                    cout << "Error in " << strList[0] << " command." << endl;
-                }
-            }  
+            dbg->doSimCommand(curr_command);
         }
         else {
             cout << "Invalid command '" << strList[0] << "'" << endl;
         }
-        add_history(line);
-        free(line);
-
+        
         if (dbg->isFinished()) {
             cout << "Debug session finished.\n" << endl;
             dbg->stop();
@@ -128,10 +139,12 @@ void processLines(list<string> &lines)
 
         MReference result = msim.getLastResult();
 
-        if (result.refType != MRT_None) {
-            uint32_t value = msim.reg[result.address];
+        if (result.isReg()) {
+            uint32_t value;
+            
+            result.deref(value);
 
-            printf("%s = 0x%X %d %u\n", MIPS32Sim::getRegisterName(result.address), value, (int32_t)value, value);
+            printf("%s = 0x%X %d %u\n", mips32_getRegisterName(result.getRegIndex()).c_str(), value, (int32_t)value, value);
         }
     } else {
 
@@ -213,7 +226,7 @@ int main(int argc, char *argv[])
 	if (line == NULL) continue;
 
         if (strcmp(line, "exit") == 0 || strcmp(line, "quit") == 0) {
-                break;
+            break;
         }
         
         if (strncmp(line, "#debug", 6) == 0) {
@@ -227,8 +240,15 @@ int main(int argc, char *argv[])
                     continue;
                 } else {
                     string asmfile = strList[1];
-                    if (xsim.debug(asmfile)) {
-                        debugSession();
+                    
+                    if (simMips32) {
+                        if (msim.debug(asmfile)) {
+                            debugSession();
+                        }
+                    } else {
+                        if (xsim.debug(asmfile)) {
+                            debugSession();
+                        }
                     }
                 }
             }
@@ -245,7 +265,7 @@ int main(int argc, char *argv[])
             lines.push_back(string(line));
             free(line);
             line_count++;
-            sprintf(buffer, "%d: -> ", line_count);
+            snprintf(buffer, 16, "%d: -> ", line_count);
             prompt = buffer;
             continue;
         } else {

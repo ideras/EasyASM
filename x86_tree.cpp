@@ -25,7 +25,7 @@ void XNode::operator delete(void *ptrb)
             return false;                    \
                                              \
         if ((ref1.type != RT_Reg) && (ref1.type != RT_Mem)) {   \
-            reportError("Invalid destination '%s' for " opname " instruction.\n", arg1->toString().c_str()); \
+            reportRuntimeError("Invalid destination '%s' for " opname " instruction.\n", arg1->toString().c_str()); \
             return false;   \
         }                   \
                             \
@@ -35,7 +35,7 @@ void XNode::operator delete(void *ptrb)
             return false;                    \
                                              \
         if ((ref1.type == RT_Mem) && (ref2.type == RT_Mem)) {           \
-            reportError("Memory-Memory references are not allowed.\n"); \
+            reportRuntimeError("Memory-Memory references are not allowed.\n"); \
             return false;                                               \
         }                                                               \
         uint32_t value2;                                                \
@@ -44,12 +44,12 @@ void XNode::operator delete(void *ptrb)
             ref2.bitSize = ref1.bitSize;                                \
                                                                         \
         if (!ref2.deref(value2)) {                                 \
-            reportError("Unexpected error (deref) maybe a BUG  '%s'\n", getName());  \
+            reportRuntimeError("Unexpected error (deref) maybe a BUG  '%s'\n", getName());  \
             return false;   \
         }                   \
                             \
         if (!sim->doOperation(function, ref1, value2)) {   \
-            reportError("Invalid arguments for operation.\n");  \
+            reportRuntimeError("Invalid arguments for operation.\n");  \
             return false;                                       \
         }                                                       \
                                                                 \
@@ -66,7 +66,7 @@ void XNode::operator delete(void *ptrb)
     do {    \
         if (arg->getKind() != XARG_MEMREF &&        \
             arg->getKind() != XARG_REGISTER) {      \
-            reportError("Invalid argument '%s' for instruction '%s'\n", \
+            reportRuntimeError("Invalid argument '%s' for instruction '%s'\n", \
                         arg->toString().c_str(),    \
                         this->getName());   \
             return false;   \
@@ -77,7 +77,7 @@ void XNode::operator delete(void *ptrb)
         }   \
             \
         if (a_ref.bitSize != BS_8) {    \
-            reportError("Invalid operand size in instruction '%s'\n", this->getName()); \
+            reportRuntimeError("Invalid operand size in instruction '%s'\n", this->getName()); \
             return false;   \
         }   \
     } while (0)
@@ -87,11 +87,11 @@ void XNode::operator delete(void *ptrb)
 bool XArgRegister::eval(X86Sim *xsim, int resultSize, uint8_t flags, uint32_t &result)
 {
     if (!WANT_XTEND(flags) && resultSize != regSize) {
-        reportError("Operand sizes do not match. Expected %d bits size.\n", BIT_SIZE(resultSize));
+        reportRuntimeError("Operand sizes do not match. Expected %d bits size.\n", BIT_SIZE(resultSize));
         return false;
     }
     if (WANT_XTEND(flags) && regSize >= resultSize) {
-        reportError("Invalid size of operand '%s'. Size is %d bits.\n", toString().c_str(), regSize);
+        reportRuntimeError("Invalid size of operand '%s'. Size is %d bits.\n", toString().c_str(), regSize);
         return false;
     }
 
@@ -124,11 +124,11 @@ bool XArgMemRef::eval(X86Sim *xsim, int resultSize, uint8_t flags, uint32_t &res
     wordSize = (sizeDirective==0)? resultSize : sizeDirective;
 
     if (!WANT_XTEND(flags) && resultSize != wordSize) {
-        reportError("Error: Operand sizes do not match. Expected %d bits size.\n", BIT_SIZE(resultSize));
+        reportRuntimeError("Error: Operand sizes do not match. Expected %d bits size.\n", BIT_SIZE(resultSize));
         return false;
     }
     if (WANT_XTEND(flags) && wordSize >= resultSize) {
-        reportError("Invalid size of operand '%s'\n", toString().c_str());
+        reportRuntimeError("Invalid size of operand '%s'\n", toString().c_str());
         return false;
     }
 
@@ -140,7 +140,7 @@ bool XArgMemRef::eval(X86Sim *xsim, int resultSize, uint8_t flags, uint32_t &res
     uint32_t value;
 
     if (!xsim->readMem(vaddr, value, wordSize)) {
-        reportError("Cannot read address '0x%X'.\n", vaddr);
+        reportRuntimeError("Cannot read address '0x%X'.\n", vaddr);
         return false;
     }
 
@@ -194,7 +194,7 @@ bool XArgConstant::eval(X86Sim *sim, int resultSize, uint8_t flags, uint32_t &re
     UNUSED(sim);
 
     if (WANT_XTEND(flags)) {
-        reportError("Invalid operand '%s'.\n", toString().c_str());
+        reportRuntimeError("Invalid operand '%s'.\n", toString().c_str());
         return false;
     }
 
@@ -223,7 +223,7 @@ bool XAddrExprReg::eval(X86Sim *xsim, uint32_t &result)
     if (reg->getKind() != XARG_REGISTER) {
         string str = reg->toString();
 
-        reportError("Invalid register '%s' in memory address expression\n", str.c_str());
+        reportRuntimeError("Invalid register '%s' in memory address expression\n", str.c_str());
         return false;
     }
 
@@ -246,7 +246,7 @@ bool XAddrExpr2Term::eval(X86Sim *xsim, uint32_t &result)
     uint32_t v1, v2;
 
     if ((op == XOP_MINUS) && !expr2->isA(XADDR_EXPR_CONST)) {
-        reportError("Invalid expression '%s' in memory reference.\n", toString().c_str());
+        reportRuntimeError("Invalid expression '%s' in memory reference.\n", toString().c_str());
         return false;
     }
 
@@ -273,7 +273,7 @@ bool XAddrExpr2Term::eval(X86Sim *xsim, uint32_t &result)
         return true;
 
     } else {
-        reportError("Invalid expression '%s' in memory reference.\n", toString().c_str());
+        reportRuntimeError("Invalid expression '%s' in memory reference.\n", toString().c_str());
         return false;
     }
 }
@@ -281,11 +281,11 @@ bool XAddrExpr2Term::eval(X86Sim *xsim, uint32_t &result)
 bool XAddrExpr3Term::eval(X86Sim *xsim, uint32_t &result)
 {
     if ((op1 == XOP_MINUS) && !expr2->isA(XADDR_EXPR_CONST)) {
-        reportError("Invalid expression '%s' in memory reference.\n", toString().c_str());
+        reportRuntimeError("Invalid expression '%s' in memory reference.\n", toString().c_str());
         return false;
     }
     if ((op2 == XOP_MINUS) && !expr3->isA(XADDR_EXPR_CONST)) {
-        reportError("Invalid expression '%s' in memory reference.\n", toString().c_str());
+        reportRuntimeError("Invalid expression '%s' in memory reference.\n", toString().c_str());
         return false;
     }
 
@@ -321,7 +321,7 @@ bool XAddrExpr3Term::eval(X86Sim *xsim, uint32_t &result)
         return true;
 
     } else {
-        reportError("Invalid expression '%s' in memory reference.\n", toString().c_str());
+        reportRuntimeError("Invalid expression '%s' in memory reference.\n", toString().c_str());
         return false;
     }
 }
@@ -344,12 +344,12 @@ bool XAddrExprMult::eval(X86Sim *xsim, uint32_t &result)
     } else if ( expr1->isA(XADDR_EXPR_CONST) &&
                 expr2->isA(XADDR_EXPR_REG) ) {
     } else {
-        reportError("Invalid expression '%s' in memory reference.\n", toString().c_str());
+        reportRuntimeError("Invalid expression '%s' in memory reference.\n", toString().c_str());
         return false;
     }
 
     if ((v1 != 1) && (v1 != 2) && (v1 != 4) && (v1 != 8)) {
-        reportError("Invalid scalar multiplier %d in address expression '%s'. "
+        reportRuntimeError("Invalid scalar multiplier %d in address expression '%s'. "
                     "Valid values are 1, 2, 4, 8.", v1, toString().c_str());
         return false;
     }
@@ -366,14 +366,14 @@ IMPLEMENT_INSTRUCTION(Mov) {
         return false;
 
     if ((ref1.type == RT_Mem) && (arg2->getKind() == XARG_MEMREF)) {
-        reportError("Memory-Memory references are not allowed.\n");
+        reportRuntimeError("Memory-Memory references are not allowed.\n");
         return false;
     }
 
     uint32_t value2;
 
     if (!arg2->eval(sim, ref1.bitSize, 0, value2)) {
-        reportError("Invalid argument '%s' in mov instruction.\n", arg2->toString().c_str());
+        reportRuntimeError("Invalid argument '%s' in mov instruction.\n", arg2->toString().c_str());
         return false;
     }
 
@@ -391,14 +391,14 @@ IMPLEMENT_INSTRUCTION(Movsx) {
         return false;
 
     if ((ref1.type == RT_Mem) && (arg2->getKind() == XARG_MEMREF)) {
-        reportError("Memory-Memory references are not allowed.\n");
+        reportRuntimeError("Memory-Memory references are not allowed.\n");
         return false;
     }
 
     uint32_t value2;
 
     if (!arg2->eval(sim, ref1.bitSize, SX_MASK, value2)) {
-        reportError("Invalid argument '%s' in movsx instruction.\n", arg2->toString().c_str());
+        reportRuntimeError("Invalid argument '%s' in movsx instruction.\n", arg2->toString().c_str());
         return false;
     }
 
@@ -414,14 +414,14 @@ IMPLEMENT_INSTRUCTION(Movzx) {
         return false;
 
     if ((ref1.type == RT_Mem) && (arg2->getKind() == XARG_MEMREF)) {
-        reportError("Memory-Memory references are not allowed.\n");
+        reportRuntimeError("Memory-Memory references are not allowed.\n");
         return false;
     }
 
     uint32_t value2;
 
     if (!arg2->eval(sim, ref1.bitSize, ZX_MASK, value2)) {
-        reportError("Invalid argument '%s' in movzx instruction.\n", arg2->toString().c_str());
+        reportRuntimeError("Invalid argument '%s' in movzx instruction.\n", arg2->toString().c_str());
         return false;
     }
 
@@ -434,19 +434,19 @@ IMPLEMENT_INSTRUCTION(Push) {
     XReference ref1;
 
     if (!arg->getReference(sim, ref1)) {
-	reportError("getReference error %s\n", arg->toString().c_str());
+	reportRuntimeError("getReference error %s\n", arg->toString().c_str());
         return false;
     }
 
     if (ref1.bitSize < BS_16) {
-        reportError("Expected 32 or 16 bits argument. Found %d bit size.\n", ref1.bitSize);
+        reportRuntimeError("Expected 32 or 16 bits argument. Found %d bit size.\n", ref1.bitSize);
         return false;
     }
 
     uint32_t value;
     
     if (!ref1.deref(value)) {
-        reportError("getValue error %X\n", ref1.address);
+        reportRuntimeError("getValue error %X\n", ref1.address);
         return false;
     }
 
@@ -456,7 +456,7 @@ IMPLEMENT_INSTRUCTION(Push) {
     esp -= ref1.bitSize / 8;
 
     if (!sim->writeMem(esp, value, ref1.bitSize)) {
-        reportError("Invalid address '0x%X'. Maybe stack overflow.\n", esp);
+        reportRuntimeError("Invalid address '0x%X'. Maybe stack overflow.\n", esp);
         return false;
     }
     sim->setRegValue(R_ESP, esp);
@@ -475,7 +475,7 @@ IMPLEMENT_INSTRUCTION(Pop) {
         return false;
 
     if (ref1.bitSize < BS_16) {
-        reportError("Expected 32 or 16 bits argument. Found %d bit size.\n", ref1.bitSize);
+        reportRuntimeError("Expected 32 or 16 bits argument. Found %d bit size.\n", ref1.bitSize);
         return false;
     }
 
@@ -484,11 +484,11 @@ IMPLEMENT_INSTRUCTION(Pop) {
     sim->getRegValue(R_ESP, esp);
 
     if (!sim->readMem(esp, value, ref1.bitSize)) {
-        reportError("Invalid address '0x%X'.\n", esp);
+        reportRuntimeError("Invalid address '0x%X'.\n", esp);
         return false;
     }
     if (!ref1.assign(value)) {
-        reportError("Oops: BUG in the machine.\n", esp);
+        reportRuntimeError("Oops: BUG in the machine.\n", esp);
         return false;
     }
     esp += ref1.bitSize / 8;
@@ -506,7 +506,7 @@ IMPLEMENT_INSTRUCTION(Lea) {
         return false;
 
     if (ref1.type != RT_Reg) {
-        reportError("Invalid destination '%s' for 'lea' instruction.\n", arg1->toString().c_str());
+        reportRuntimeError("Invalid destination '%s' for 'lea' instruction.\n", arg1->toString().c_str());
         return false;
     }
 
@@ -516,7 +516,7 @@ IMPLEMENT_INSTRUCTION(Lea) {
         return false;
 
     if (ref2.type != RT_Mem) {
-        reportError("Second argument of instruction 'lea' should be a memory reference.\n");
+        reportRuntimeError("Second argument of instruction 'lea' should be a memory reference.\n");
         return false;
     }
 
@@ -547,24 +547,24 @@ IMPLEMENT_INSTRUCTION(Shl) {
         return false;
 
     if (ref2.type != RT_Reg && ref2.type != RT_Const) {
-        reportError("Invalid argument for shift operation. Expected register register or constant.\n");
+        reportRuntimeError("Invalid argument for shift operation. Expected register register or constant.\n");
         return false;
     }
 
     if ((ref2.type == RT_Reg) && (ref2.address != R_CL)) {
-        reportError("Invalid argument for shift operation. Expected register 'cl'.\n");
+        reportRuntimeError("Invalid argument for shift operation. Expected register 'cl'.\n");
         return false;
     }
     
     uint32_t value2;
     
     if (!ref2.deref(value2)) {
-        reportError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
+        reportRuntimeError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
         return false;
     }
 
     if (!sim->doOperation(XFN_SHL, ref1, value2)) {
-        reportError("Invalid argument for operation.\n");
+        reportRuntimeError("Invalid argument for operation.\n");
         return false;
     }
 
@@ -583,24 +583,24 @@ IMPLEMENT_INSTRUCTION(Shr) {
         return false;
 
     if (ref2.type != RT_Reg && ref2.type != RT_Const) {
-        reportError("Invalid argument for shift operation. Expected register register or constant.\n");
+        reportRuntimeError("Invalid argument for shift operation. Expected register register or constant.\n");
         return false;
     }
 
     if ((ref2.type == RT_Reg) && (ref2.address != R_CL)) {
-        reportError("Invalid argument for shift operation. Expected register 'cl'.\n");
+        reportRuntimeError("Invalid argument for shift operation. Expected register 'cl'.\n");
         return false;
     }
     
     uint32_t value2;
 
     if (!ref2.deref(value2)) {
-        reportError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
+        reportRuntimeError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
         return false;
     }
 
     if (!sim->doOperation(XFN_SHR, ref1, value2)) {
-        reportError("Invalid argument for operation.\n");
+        reportRuntimeError("Invalid argument for operation.\n");
         return false;
     }
 
@@ -618,7 +618,7 @@ IMPLEMENT_INSTRUCTION(Leave) {
     sim->setRegValue(R_ESP, ebp_value);
 
     if (!sim->readMem(ebp_value, old_ebp_value, BS_32)) {
-        reportError("Invalid address '0x%X'.\n", ebp_value);
+        reportRuntimeError("Invalid address '0x%X'.\n", ebp_value);
         return false;
     }
 
@@ -633,7 +633,7 @@ IMPLEMENT_INSTRUCTION(Leave) {
 IMPLEMENT_INSTRUCTION(Imul1) {
     UNUSED(result);
 
-    reportError("IMUL instruction with one argument not supported.\n");
+    reportRuntimeError("IMUL instruction with one argument not supported.\n");
     return false;
 }
 
@@ -644,7 +644,7 @@ IMPLEMENT_INSTRUCTION(Imul2) {
         return false;
 
     if ( (ref1.type != RT_Reg) || ((ref1.bitSize != BS_16) && (ref1.bitSize != BS_32)) ) {
-        reportError("Invalid destination '%s' for IMUL instruction.\n", arg1->toString().c_str());
+        reportRuntimeError("Invalid destination '%s' for IMUL instruction.\n", arg1->toString().c_str());
         return false;
     }
 
@@ -660,7 +660,7 @@ IMPLEMENT_INSTRUCTION(Imul2) {
         case RT_Mem:
         case RT_Reg: {
             if (ref1.bitSize != ref2.bitSize) {
-                reportError("Invalid arguments in IMUL instruction.  Both operands should be 16 bits or 32 bits.\n");
+                reportRuntimeError("Invalid arguments in IMUL instruction.  Both operands should be 16 bits or 32 bits.\n");
                 return false;
             }
             break;
@@ -673,12 +673,12 @@ IMPLEMENT_INSTRUCTION(Imul2) {
     uint32_t value1, value2;
     
     if (!ref1.deref(value1)) {
-        reportError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
+        reportRuntimeError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
         return false;
     }
 
     if (!ref2.deref(value2)) {
-        reportError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
+        reportRuntimeError("Unexpected error %d: %s.\n", __LINE__, __FUNCTION__);
         return false;
     }
     
@@ -720,7 +720,7 @@ IMPLEMENT_INSTRUCTION(Imul3) {
     UNUSED(sim);
     UNUSED(result);
 
-    reportError("IMUL instruction with three argument  not supported.\n");
+    reportRuntimeError("IMUL instruction with three argument  not supported.\n");
     return false;
 }
 
@@ -729,21 +729,21 @@ IMPLEMENT_INSTRUCTION(Idiv) {
     UNUSED(result);
 
     if (!arg->isA(XARG_REGISTER) && !arg->isA(XARG_MEMREF)) {
-        reportError("Invalid arguments '%s' in IDIV instruction\n", arg->toString().c_str());
+        reportRuntimeError("Invalid arguments '%s' in IDIV instruction\n", arg->toString().c_str());
         return false;
     }
     
     XReference ref;
     
     if (!arg->getReference(sim, ref)) {
-        reportError("Unknown error in getRef '%s'\n", arg->toString().c_str());
+        reportRuntimeError("Unknown error in getRef '%s'\n", arg->toString().c_str());
         return false;
     }
     
     switch (ref.bitSize) {
         case BS_8:
         case BS_16:
-            reportError("EasyASM only supports 32 bits operands in IDIV instruction\n");
+            reportRuntimeError("EasyASM only supports 32 bits operands in IDIV instruction\n");
             return false;
         case BS_32: {
             int64_t temp, edx_eax;
@@ -757,8 +757,8 @@ IMPLEMENT_INSTRUCTION(Idiv) {
             temp = edx_eax / (int32_t)arg_value;
             
             if(temp > 0x7FFFFFFF || temp < (int32_t)0x80000000) {
-                reportError("Exception in IDIV instruction\n");
-                sim->runtime_context->stop = true;
+                reportRuntimeError("Exception in IDIV instruction\n");
+                sim->runtimeCtx->stop = true;
                 return false;
             }
             eax = temp & 0xFFFFFFFF;
@@ -770,7 +770,7 @@ IMPLEMENT_INSTRUCTION(Idiv) {
             return true;
         }
         default:
-            reportError("Memory reference in IDIV instruction requires size directive 'byte', 'word' or 'dword'\n");
+            reportRuntimeError("Memory reference in IDIV instruction requires size directive 'byte', 'word' or 'dword'\n");
             return false;
     }
 }
@@ -778,7 +778,7 @@ IMPLEMENT_INSTRUCTION(Idiv) {
 IMPLEMENT_INSTRUCTION(Mul) {
     
     if (!arg->isA(XARG_REGISTER) && !arg->isA(XARG_MEMREF)) {
-        reportError("Invalid arguments '%s' in Mul instruction\n", arg->toString().c_str());
+        reportRuntimeError("Invalid arguments '%s' in Mul instruction\n", arg->toString().c_str());
         return false;
     }
     
@@ -864,7 +864,7 @@ IMPLEMENT_INSTRUCTION(Div) {
     UNUSED(sim);
     UNUSED(result);
 
-    reportError("Div instruction not supported.\n");
+    reportRuntimeError("Div instruction not supported.\n");
     return false;
 }
 
@@ -875,14 +875,14 @@ IMPLEMENT_INSTRUCTION(Inc) {
         return false;
     
     if ((ref1.type == RT_Mem) && (ref1.bitSize == 0)) {
-        reportError("Memory reference argument '%s' requires size specification (byte, word or dword).\n",
+        reportRuntimeError("Memory reference argument '%s' requires size specification (byte, word or dword).\n",
                     arg->toString().c_str());
 
         return false;
     }
 
     if (!sim->doOperation(XFN_ADD, ref1, 1)) {
-        reportError("Invalid argument in instruction '%s'.\n", getName());
+        reportRuntimeError("Invalid argument in instruction '%s'.\n", getName());
         return false;
     }
 
@@ -898,7 +898,7 @@ IMPLEMENT_INSTRUCTION(Dec) {
         return false;
 
     if (!sim->doOperation(XFN_SUB, ref1, 1)) {
-        reportError("Invalid argument for operation.\n");
+        reportRuntimeError("Invalid argument for operation.\n");
         return false;
     }
 
@@ -914,7 +914,7 @@ IMPLEMENT_INSTRUCTION(Not) {
         return false;
 
     if (!sim->doOperation(XFN_NOT, ref1, 0)) {
-        reportError("Invalid argument for operation.\n");
+        reportRuntimeError("Invalid argument for operation.\n");
         return false;
     }
 
@@ -930,7 +930,7 @@ IMPLEMENT_INSTRUCTION(Neg) {
         return false;
 
     if (!sim->doOperation(XFN_NEG, ref1, 1)) {
-        reportError("Invalid argument for operation.\n");
+        reportRuntimeError("Invalid argument for operation.\n");
         return false;
     }
 
@@ -945,12 +945,12 @@ IMPLEMENT_INSTRUCTION(Jmp) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for jump instruction. Expected register, memory reference, label or constant, found '%s'.\n",
+        reportRuntimeError("Invalid argument for jump instruction. Expected register, memory reference, label or constant, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
     
-    sim->runtime_context->ip = target_addr;
+    sim->runtimeCtx->ip = target_addr;
 
     return true;
 }
@@ -960,7 +960,7 @@ IMPLEMENT_INSTRUCTION(Jz) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -968,13 +968,13 @@ IMPLEMENT_INSTRUCTION(Jz) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
 
     if (sim->isFlagSet(ZF_MASK)) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Jump to label is not taken. Zero flag is not set
     }
@@ -987,7 +987,7 @@ IMPLEMENT_INSTRUCTION(Jnz) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -995,13 +995,13 @@ IMPLEMENT_INSTRUCTION(Jnz) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
     
     if (!sim->isFlagSet(ZF_MASK)) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Branch is not taken. Zero flag is set
     }
@@ -1014,7 +1014,7 @@ IMPLEMENT_INSTRUCTION(Jl) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1022,7 +1022,7 @@ IMPLEMENT_INSTRUCTION(Jl) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1031,7 +1031,7 @@ IMPLEMENT_INSTRUCTION(Jl) {
     bool of = sim->isFlagSet(OF_MASK);
 
     if (sf != of) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Branch to label is not taken. Sign flag is equal to overflow flag.
     }
@@ -1044,7 +1044,7 @@ IMPLEMENT_INSTRUCTION(Jg) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1052,7 +1052,7 @@ IMPLEMENT_INSTRUCTION(Jg) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1062,7 +1062,7 @@ IMPLEMENT_INSTRUCTION(Jg) {
     bool zf = sim->isFlagSet(ZF_MASK);
 
     if ((sf == of) && !zf) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Branch to label is not taken. Sign flag is not equal to overflow flag or zero flag is set.
     }
@@ -1075,7 +1075,7 @@ IMPLEMENT_INSTRUCTION(Jle) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1083,7 +1083,7 @@ IMPLEMENT_INSTRUCTION(Jle) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1093,7 +1093,7 @@ IMPLEMENT_INSTRUCTION(Jle) {
     bool zf = sim->isFlagSet(ZF_MASK);
 
     if ((sf != of) || zf) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Branch to label is not taken. Sign flag is equal to overflow flag and Zero flag is not set.
     }
@@ -1106,7 +1106,7 @@ IMPLEMENT_INSTRUCTION(Jge) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1114,7 +1114,7 @@ IMPLEMENT_INSTRUCTION(Jge) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1123,7 +1123,7 @@ IMPLEMENT_INSTRUCTION(Jge) {
     bool of = sim->isFlagSet(OF_MASK);
 
     if (sf == of) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Branch to label is not taken. Sign flag is not equal to overflow flag.
     }
@@ -1136,7 +1136,7 @@ IMPLEMENT_INSTRUCTION(Jb) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1144,7 +1144,7 @@ IMPLEMENT_INSTRUCTION(Jb) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1152,7 +1152,7 @@ IMPLEMENT_INSTRUCTION(Jb) {
     bool carry_flag = sim->isFlagSet(CF_MASK);
 
     if (carry_flag) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Branch to label is not taken. Carry flag is not set.
     }
@@ -1165,7 +1165,7 @@ IMPLEMENT_INSTRUCTION(Ja) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1173,7 +1173,7 @@ IMPLEMENT_INSTRUCTION(Ja) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1182,7 +1182,7 @@ IMPLEMENT_INSTRUCTION(Ja) {
     bool zero_flag = sim->isFlagSet(ZF_MASK);
 
     if (!carry_flag && !zero_flag) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Branch to label is not taken. Carry flag is set or zero flag is set.
     }
@@ -1195,7 +1195,7 @@ IMPLEMENT_INSTRUCTION(Jbe) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1203,7 +1203,7 @@ IMPLEMENT_INSTRUCTION(Jbe) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1212,7 +1212,7 @@ IMPLEMENT_INSTRUCTION(Jbe) {
     bool zero_flag = sim->isFlagSet(ZF_MASK);
 
     if (carry_flag || zero_flag) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Branch to label is not taken. Carry flag is not set and zero flag is not set.
     }
@@ -1225,7 +1225,7 @@ IMPLEMENT_INSTRUCTION(Jae) {
 
     if (arg->getKind() != XARG_CONST &&
         arg->getKind() != XARG_IDENTIFIER) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1233,7 +1233,7 @@ IMPLEMENT_INSTRUCTION(Jae) {
     uint32_t target_addr;
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for conditional branch instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1241,7 +1241,7 @@ IMPLEMENT_INSTRUCTION(Jae) {
     bool carry_flag = sim->isFlagSet(CF_MASK);
 
     if (!carry_flag) {
-        sim->runtime_context->ip = target_addr;
+        sim->runtimeCtx->ip = target_addr;
     } else {
         //Branch to label is not taken. Carry flag is set.
     }
@@ -1256,18 +1256,18 @@ IMPLEMENT_INSTRUCTION(Call) {
     
     if (arg->isA(XARG_EXT_FUNC)) {
         XArgExternalFuntionName *fn_arg = (XArgExternalFuntionName *)arg;
-		string libFullName = getLibFullName(fn_arg->libName);
+	string libFullName = getLibFullName(fn_arg->libName);
         HLIB lhandle = openLibrary(libFullName.c_str());
         
         if (lhandle == NULL) {
-            reportError("Cannot open library '%s'.\n", libFullName.c_str());
+            reportRuntimeError("Cannot open library '%s'.\n", libFullName.c_str());
             return false;
         }
                 
         HFUNC hfunc = getFunctionAddr(lhandle, fn_arg->funcName.c_str());
         
         if (hfunc == NULL) {
-            reportError("Function '%s' doesn't exist in library '%s'.\n", fn_arg->funcName.c_str(), libFullName.c_str());
+            reportRuntimeError("Function '%s' doesn't exist in library '%s'.\n", fn_arg->funcName.c_str(), libFullName.c_str());
             return false;
         }
         
@@ -1305,7 +1305,7 @@ IMPLEMENT_INSTRUCTION(Call) {
     }
     
     if (!arg->eval(sim, BS_32, 0, target_addr)) {
-        reportError("Invalid argument for call instruction. Expected address, found '%s'.\n",
+        reportRuntimeError("Invalid argument for call instruction. Expected address, found '%s'.\n",
                     arg->toString().c_str());
         return false;
     }
@@ -1315,13 +1315,13 @@ IMPLEMENT_INSTRUCTION(Call) {
     sim->getRegValue(R_ESP, esp);
     esp -= 4;
 
-    if (!sim->writeMem(esp, sim->runtime_context->ip, BS_32)) {
-        reportError("Invalid address '0x%X'. Maybe stack overflow.\n", esp);
+    if (!sim->writeMem(esp, sim->runtimeCtx->ip, BS_32)) {
+        reportRuntimeError("Invalid address '0x%X'. Maybe stack overflow.\n", esp);
         return false;
     }
     sim->setRegValue(R_ESP, esp);
     
-    sim->runtime_context->ip = target_addr;
+    sim->runtimeCtx->ip = target_addr;
 
     return true;
 }
@@ -1334,12 +1334,12 @@ IMPLEMENT_INSTRUCTION(Ret) {
     sim->getRegValue(R_ESP, esp);
 
     if (!sim->readMem(esp, ret_ip, BS_32)) {
-        reportError("Invalid address '0x%X'. Maybe stack overflow.\n", esp);
+        reportRuntimeError("Invalid address '0x%X'. Maybe stack overflow.\n", esp);
         return false;
     }
     sim->setRegValue(R_ESP, esp + 4);
     
-    sim->runtime_context->ip = ret_ip;
+    sim->runtimeCtx->ip = ret_ip;
     
     return true;
 }
@@ -1671,7 +1671,7 @@ bool XCmdSet::exec(X86Sim *sim, XReference &result)
             XBitSize bitSize = arg_mref->sizeDirective;
 
             if (bitSize == 0) {
-                reportError("No size directive specified.\n");
+                reportRuntimeError("No size directive specified.\n");
                 return false;
             }
             
@@ -1686,7 +1686,7 @@ bool XCmdSet::exec(X86Sim *sim, XReference &result)
                 uint32_t value = *it;
                 
                 if (!ref.assign(value)) {
-                    reportError("Invalid address '0x%X'.\n", ref.address);
+                    reportRuntimeError("Invalid address '0x%X'.\n", ref.address);
                     return false;
                 }
                 
@@ -1703,7 +1703,7 @@ bool XCmdSet::exec(X86Sim *sim, XReference &result)
             return true;
         }
         default: {
-            reportError("Invalid argument '%s' for #set command.\n", arg->toString().c_str());
+            reportRuntimeError("Invalid argument '%s' for #set command.\n", arg->toString().c_str());
             return false;
         }
     }
@@ -1717,12 +1717,12 @@ bool XCmdShow::exec(X86Sim *sim, XReference &result)
     result.type = RT_None;
 
     if (!arg->getReference(sim, a_ref)) {
-        reportError("(1) Unexpected error in show '%s' command maybe a BUG.\n", arg->toString().c_str());
+        reportRuntimeError("(1) Unexpected error in show '%s' command maybe a BUG.\n", arg->toString().c_str());
         return false;
     }  
     
     if ((dataFormat == F_Ascii) && (a_ref.bitSize != BS_8)) {
-        reportError("'Ascii' format can only be used with byte arguments. Argument size is %d.\n", a_ref.bitSize);
+        reportRuntimeError("'Ascii' format can only be used with byte arguments. Argument size is %d.\n", a_ref.bitSize);
         return false;
     }
     
@@ -1730,7 +1730,7 @@ bool XCmdShow::exec(X86Sim *sim, XReference &result)
         case RT_Reg: {
             
             if (!a_ref.deref(value)) {
-                reportError("(2) Unexpected error in show '%s' command maybe a BUG.\n", arg->toString().c_str());
+                reportRuntimeError("(2) Unexpected error in show '%s' command maybe a BUG.\n", arg->toString().c_str());
                 return false;
             }
             
@@ -1758,7 +1758,7 @@ bool XCmdShow::exec(X86Sim *sim, XReference &result)
             int i, count = ((XArgMemRef *)arg)->count;
 
             if (a_ref.bitSize == 0) {
-                reportError("Memory reference argument '%s' requires size specification (byte, word or dword).\n",
+                reportRuntimeError("Memory reference argument '%s' requires size specification (byte, word or dword).\n",
                            arg->toString().c_str());
 
                 return false;
@@ -1767,7 +1767,7 @@ bool XCmdShow::exec(X86Sim *sim, XReference &result)
             for (i = 0; i < count; i++) {
                 
                 if (!a_ref.deref(value)) {
-                    reportError("Invalid address '0x%X'.\n", a_ref.address);
+                    reportRuntimeError("Invalid address '0x%X'.\n", a_ref.address);
                     return false;
                 }
                                 
@@ -1780,7 +1780,7 @@ bool XCmdShow::exec(X86Sim *sim, XReference &result)
                     case BS_16: a_ref.address += 2; break;
                     case BS_32: a_ref.address += 4; break;
                     default:
-                        reportError("BUG in the machine\n");
+                        reportRuntimeError("BUG in the machine\n");
                         return false;
                 }
             }
@@ -1794,7 +1794,7 @@ bool XCmdShow::exec(X86Sim *sim, XReference &result)
             return true;
         }
         default: {
-            reportError("Invalid argument '%s' for #show command.\n", arg->toString().c_str());
+            reportRuntimeError("Invalid argument '%s' for #show command.\n", arg->toString().c_str());
             return false;
         }
     }
@@ -1804,10 +1804,12 @@ bool XCmdExec::exec(X86Sim *sim, XReference &result)
 {
     ifstream in;
     
+    result.type = RT_None;
+    
     in.open(file_path.c_str(), ifstream::in|ifstream::binary);
 
     if (!in.is_open()) {
-        reportError("Cannot open file '%s'\n", file_path.c_str());
+        reportRuntimeError("Cannot open file '%s'\n", file_path.c_str());
         return false;
     }
     
@@ -1824,13 +1826,17 @@ bool XCmdExec::exec(X86Sim *sim, XReference &result)
 
 bool XCmdDebug::exec(X86Sim *sim, XReference &result)
 {
-    reportError("Debug command is only available in interactive mode.\n");
+    result.type = RT_None;
+    reportRuntimeError("Debug command is only available in interactive mode.\n");
+
     return false;
 }
 
 bool XCmdStop::exec(X86Sim *sim, XReference &result)
 {
-    sim->runtime_context->stop = true;
+    result.type = RT_None;
+    
+    sim->runtimeCtx->stop = true;
     
     return true;
 }

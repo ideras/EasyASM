@@ -11,7 +11,6 @@
 
 #define X_GLOBAL_MEM_WORD_COUNT 256
 #define X_STACK_SIZE_WORDS      256
-#define XTOTAL_MEM_WORDS            (X_GLOBAL_MEM_WORD_COUNT + XSTACK_SIZE)
 #define X_VIRTUAL_GLOBAL_START_ADDR 0x10000000
 #define X_VIRTUAL_GLOBAL_END_ADDR   (X_VIRTUAL_GLOBAL_START_ADDR + X_GLOBAL_MEM_WORD_COUNT - 1)
 #define X_VIRTUAL_STACK_END_ADDR    0x7FFFEFFC
@@ -101,6 +100,7 @@ struct XRtContext
     bool stop;
 };
 
+class AsmDebugger;
 class X86Debugger;
 
 class X86Sim
@@ -109,7 +109,10 @@ class X86Sim
     friend class XArgPhyAddress;
     friend struct XReference;
     friend class XI_Call;
+
 private:
+    uint8_t *getMemPtr(uint32_t vaddr);
+    bool hasEvenParity(uint8_t value);
     bool resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &vinst, map<string, uint32_t> &lbl_map);
     bool loadFile(istream *in, vector<XInstruction *> &instList, map<string, uint32_t> &labelMap);
     bool translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr);
@@ -117,13 +120,13 @@ private:
 public:
     X86Sim();
 
-    XReference getLastResult() { return last_result; }
-    int getSourceLine() { return runtime_context->line; }
+    XReference getLastResult() { return lastResult; }
+    int getSourceLine() { return runtimeCtx->line; }
     
     bool getLabel(string label, uint32_t &target) { 
-        if (label_map != NULL) {
-            if (label_map->find(label) != label_map->end()) {
-                target = label_map->at(label);
+        if (jumpTbl != NULL) {
+            if (jumpTbl->find(label) != jumpTbl->end()) {
+                target = jumpTbl->at(label);
                 return true;
             } else {
                 return false;
@@ -133,7 +136,7 @@ public:
         return false;
     }
     
-    X86Debugger *getDebugger() { return dbg; }
+    AsmDebugger *getDebugger();
     bool getRegValue(int regId, uint32_t &value);
     bool setRegValue(int regId, uint32_t value);
     bool readMem(uint32_t vaddr, uint32_t &result, XBitSize bitSize);
@@ -158,15 +161,12 @@ public:
 
 public:
     X86Debugger *dbg;
-    XRtContext *runtime_context;
-    map<string, uint32_t> *label_map;
+    XRtContext *runtimeCtx;
+    map<string, uint32_t> *jumpTbl;
     
 private:
-    XReference last_result;
-    uint8_t *getMemPtr(uint32_t vaddr);
-    bool hasEvenParity(uint8_t value);
-
-    uint32_t stack_start_address;
+    XReference lastResult;
+    uint32_t stackStartAddress;
     uint32_t gpr[9];
     uint32_t mem[X_GLOBAL_MEM_WORD_COUNT + X_STACK_SIZE_WORDS];
 };

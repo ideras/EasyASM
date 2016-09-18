@@ -5,9 +5,11 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <map>
 
 #include "mips32_lexer.h"
 #include "mips32_tree.h"
+#include "adbg.h"
 
 using namespace std;
 
@@ -20,9 +22,10 @@ using namespace std;
 
 #define M_GLOBAL_MEM_WORD_COUNT 256
 #define M_STACK_SIZE_WORDS      256
-#define M_VIRTUAL_GLOBAL_START_ADDR	0x10008000
+#define M_VIRTUAL_GLOBAL_START_ADDR	0x10000000
 #define M_VIRTUAL_GLOBAL_END_ADDR	(M_VIRTUAL_GLOBAL_START_ADDR + M_GLOBAL_MEM_WORD_COUNT - 1)
 #define M_VIRTUAL_STACK_END_ADDR	0x7FFFEFFC
+#define M_VIRTUAL_EXTFUNC_START_ADDR    0x01400000
 
 #define A_REGISTER	1
 #define A_IMMEDIATE	2
@@ -152,30 +155,93 @@ class MInstruction;
 
 struct MRtContext
 {
-    int pc;	  // Program counter	
-	int line; // Source line
+    unsigned pc;    // Program counter	
+    int line;       // Source line
     bool stop;
 };
 
-enum MRefType { MRT_Mem, MRT_Reg, MRT_None };
+enum MRefType { MRT_Reg, MRT_Mem, MRT_Const, MRT_None };
 
-struct MReference
+class MIPS32Debugger;
+class MIPS32Sim;
+
+class MReference 
 {
-	MRefType refType;
-	uint32_t address;
+public:
+    MReference(MIPS32Sim *sim) {
+        this->sim = sim;
+        this->mrt = MRT_None;
+    }
+
+    MReference() {
+        init();
+    }
+
+    void init() {
+        this->sim = NULL;
+        this->mrt = MRT_None;
+    }
+    
+    bool isNull() { return mrt == MRT_None; }
+    bool isConst() { return mrt == MRT_Const; }
+    bool isReg() { return mrt == MRT_Reg; }
+    bool isMem() { return mrt == MRT_Mem; }
+    MIPS32Sim *getSim() { return sim; }
+    unsigned getRegIndex() { return u.regIndex; }
+    uint32_t getConstValue() { return u.constValue; }
+    int getMemWordSize() { return u.mem.wordSize; }
+    uint32_t getMemVAddr() { return u.mem.vaddr; }
+
+    void setSim(MIPS32Sim *sim) { 
+        this->sim = sim;
+    }
+    
+    void setRegIndex(unsigned regIndex) {
+        mrt = MRT_Reg;
+        u.regIndex = regIndex;
+    }
+    
+    void setConstValue(uint32_t constValue) {
+        mrt = MRT_Const;
+        u.constValue = constValue;
+    }
+    
+    void setMemRef(int wordSize, uint32_t vaddr) {
+        mrt = MRT_Mem;
+        u.mem.wordSize = wordSize;
+        u.mem.vaddr = vaddr;
+    }
+
+    bool deref(uint32_t &value);
+    bool assign(uint32_t &value);
+    
+protected:
+    MRefType mrt;
+    MIPS32Sim *sim;
+    union {
+        unsigned regIndex;
+        uint32_t constValue;
+        struct {
+            int wordSize;
+            uint32_t vaddr;
+        } mem;
+    } u;
 };
 
 class MIPS32Sim 
 {
+    friend class MIPS32Debugger;
 private:
-    bool parseFile(istream *in, MParserContext &ctx);
-    bool resolveLabels(list<MInstruction *> &linst, vector<MInstruction *> &vinst);
-    bool translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr);
+    bool loadFile(istream *in, vector<MInstruction *> &instList, map<string, uint32_t> &jmpTbl);
+    bool resolveLabels(list<MInstruction *> &linst, vector<MInstruction *> &vinst, map<string, uint32_t> &jmpTbl);
+    bool doNativeCall(uint32_t funcAddr);
 public:
     MIPS32Sim();
     
-	static const char *getRegisterName(int regIndex);
+    static const char *getRegisterName(int regIndex);
 
+    AsmDebugger *getDebugger();
+    bool translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr);
     int readWord(unsigned int vaddr, uint32_t &result);
     int readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_extend);
     int readByte(unsigned int vaddr, uint32_t &result, bool sign_extend);
@@ -184,11 +250,13 @@ public:
     int writeByte(unsigned int vaddr, uint8_t value);
     bool getRegisterValue(string name, uint32_t &value);
     bool setRegisterValue(string name, uint32_t value);
-	int getSourceLine() { return runtime_context->line; }
+    int getSourceLine() { return runtimeCtx->line; }
     bool exec(istream *in);
-    bool execInstruction(MInstruction *inst, MRtContext &ctx);
-    void showRegisters();
-	MReference getLastResult() { return last_result; }
+    bool debug(string asm_file);
+    bool execInstruction(MInstruction *inst);
+    MReference getLastResult() { return lastResult; }
+    bool getLabel(string label, uint32_t &target);
+    bool parseFile(istream *in, MParserContext &ctx);
     
     uint32_t reg[32]; //MIPS32 uses 32 registers, 32 bits each one
     uint32_t mem[M_GLOBAL_MEM_WORD_COUNT + M_STACK_SIZE_WORDS]; //Words of physical memory
@@ -196,8 +264,11 @@ public:
     uint32_t stack_start_address;
 
 public:
-	MRtContext *runtime_context;
-	MReference last_result;
+    MRtContext *runtimeCtx;
+    MReference lastResult;
+private:
+    map<string, uint32_t> *jumpTable;
+    MIPS32Debugger *dbg;
 };
 
 enum MIPS32ArgumentType { M32ARG_Register, M32ARG_Immediate };
@@ -213,7 +284,6 @@ struct MIPS32Function {
     unsigned int opcode;
     int argcount;
     unsigned char is_mem_access;
-    unsigned char is_branch;
 };
 
 struct MIPS32Instruction {
