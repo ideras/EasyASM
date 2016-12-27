@@ -4,122 +4,83 @@
 #include <map>
 #include <vector>
 #include "mips32_sim.h"
+#include "mips32_dbg.h"
 #include "mips32_lexer.h"
 #include "mips32_parser.h"
 #include "mips32_tree.h"
 #include "mempool.h"
 #include "util.h"
+#include "native_lib.h"
 
 struct MIPS32Function functions[] = {
-	{"add", R_FORMAT, MKOPCODE2(0x00, 0x20), 3, 0, 0},
-	{"sll", R_FORMAT, MKOPCODE2(0x0, 0x00), 3, 0, 0},
-	{"addu", R_FORMAT, MKOPCODE2(0x00, 0x21), 3, 0, 0},
-	{"srl", R_FORMAT, MKOPCODE2(0x0, 0x02), 3, 0, 0},
-	{"and", R_FORMAT, MKOPCODE2(0x00, 0x24), 3, 0, 0},
-	{"sra", R_FORMAT, MKOPCODE2(0x0, 0x03), 3, 0, 0},
-	{"break", R_FORMAT, MKOPCODE2(0x00, 0x0D), 0, 0, 0},
-	{"sllv", R_FORMAT, MKOPCODE2(0x0, 0x04), 3, 0, 0},
-	{"div", R_FORMAT, MKOPCODE2(0x00, 0x1A), 2, 0, 0},
-	{"srlv", R_FORMAT, MKOPCODE2(0x0, 0x06), 3, 0, 0},
-	{"divu", R_FORMAT, MKOPCODE2(0x00, 0x1B), 2, 0, 0},
-	{"srav", R_FORMAT, MKOPCODE2(0x0, 0x07), 3, 0, 0},
-	{"jalr", R_FORMAT, MKOPCODE2(0x00, 0x09), 2, 0, 0},
-	{"jr", R_FORMAT, MKOPCODE2(0x0, 0x08), 1, 0, 0},
-	{"mfhi", R_FORMAT, MKOPCODE2(0x00, 0x10), 1, 0, 0},
-	{"syscall", R_FORMAT, MKOPCODE2(0x0, 0x0C), 0, 0, 0},
-	{"mflo", R_FORMAT, MKOPCODE2(0x00, 0x12), 1, 0, 0},
-	{"mthi", R_FORMAT, MKOPCODE2(0x00, 0x11), 1, 0, 0},
-	{"mtlo", R_FORMAT, MKOPCODE2(0x00, 0x13), 1, 0, 0},
-	{"mult", R_FORMAT, MKOPCODE2(0x00, 0x18), 2, 0, 0},
-	{"multu", R_FORMAT, MKOPCODE2(0x00, 0x19), 2, 0, 0},
-	{"nor", R_FORMAT, MKOPCODE2(0x00, 0x27), 3, 0, 0},
-	{"or", R_FORMAT, MKOPCODE2(0x00, 0x25), 3, 0, 0},
-	{"slt", R_FORMAT, MKOPCODE2(0x00, 0x2A), 3, 0, 0},
-	{"sltu", R_FORMAT, MKOPCODE2(0x00, 0x2B), 3, 0, 0},
-	{"sub", R_FORMAT, MKOPCODE2(0x0, 0x22), 3, 0, 0},
-	{"subu", R_FORMAT, MKOPCODE2(0x0, 0x23), 3, 0, 0},
-	{"xor", R_FORMAT, MKOPCODE2(0x0, 0x26), 3, 0, 0},
-        {"addi", I_FORMAT, MKOPCODE1(0x08), 3, 0, 0},
-        {"bltz", I_FORMAT, MKOPCODE2(0x01, 0x0), 2, 0, 0},
-        {"addiu", I_FORMAT, MKOPCODE1(0x09), 3, 0, 0},
-        {"bgez", I_FORMAT, MKOPCODE2(0x01, 0x1), 2, 0, 1},
-        {"andi", I_FORMAT, MKOPCODE1(0x0C), 3, 0, 0},
-        {"beq", I_FORMAT, MKOPCODE1(0x04), 3, 0, 1},
-        {"bne", I_FORMAT, MKOPCODE1(0x05), 3, 0, 1},
-        {"blez", I_FORMAT, MKOPCODE2(0x06, 0x0), 2, 0, 1},
-        {"bgtz", I_FORMAT, MKOPCODE2(0x07, 0x0), 2, 0, 1},
-        {"slti", I_FORMAT, MKOPCODE1(0x0A), 3, 0, 0},
-        {"lb", I_FORMAT, MKOPCODE1(0x20), 3, 1, 0},
-        {"sltiu", I_FORMAT, MKOPCODE1(0x0B), 3, 0, 0},
-        {"lbu", I_FORMAT, MKOPCODE1(0x24), 3, 1, 0},
-        {"lh", I_FORMAT, MKOPCODE1(0x21), 3, 1, 0},
-        {"ori", I_FORMAT, MKOPCODE1(0x0D), 3, 0, 0},
-        {"lhu", I_FORMAT, MKOPCODE1(0x25), 3, 1, 0},
-        {"xori", I_FORMAT, MKOPCODE1(0x0E), 3, 0, 0},
-        {"lui", I_FORMAT, MKOPCODE1(0x0F), 2, 0, 0},
-        {"lw", I_FORMAT, MKOPCODE1(0x23), 3, 1, 0},
+	{"add", R_FORMAT, MKOPCODE2(0x00, 0x20), 3, 0},
+	{"sll", R_FORMAT, MKOPCODE2(0x0, 0x00), 3, 0},
+	{"addu", R_FORMAT, MKOPCODE2(0x00, 0x21), 3, 0},
+	{"srl", R_FORMAT, MKOPCODE2(0x0, 0x02), 3, 0},
+	{"and", R_FORMAT, MKOPCODE2(0x00, 0x24), 3, 0},
+	{"sra", R_FORMAT, MKOPCODE2(0x0, 0x03), 3, 0},
+	{"break", R_FORMAT, MKOPCODE2(0x00, 0x0D), 0, 0},
+	{"sllv", R_FORMAT, MKOPCODE2(0x0, 0x04), 3, 0},
+	{"div", R_FORMAT, MKOPCODE2(0x00, 0x1A), 2, 0},
+	{"srlv", R_FORMAT, MKOPCODE2(0x0, 0x06), 3, 0},
+	{"divu", R_FORMAT, MKOPCODE2(0x00, 0x1B), 2, 0},
+	{"srav", R_FORMAT, MKOPCODE2(0x0, 0x07), 3, 0},
+	{"jalr", R_FORMAT, MKOPCODE2(0x00, 0x09), 1, 0},
+	{"jr", R_FORMAT, MKOPCODE2(0x0, 0x08), 1, 0},
+	{"mfhi", R_FORMAT, MKOPCODE2(0x00, 0x10), 1, 0},
+	{"syscall", R_FORMAT, MKOPCODE2(0x0, 0x0C), 0, 0},
+	{"mflo", R_FORMAT, MKOPCODE2(0x00, 0x12), 1, 0},
+	{"mthi", R_FORMAT, MKOPCODE2(0x00, 0x11), 1, 0},
+	{"mtlo", R_FORMAT, MKOPCODE2(0x00, 0x13), 1, 0},
+	{"mult", R_FORMAT, MKOPCODE2(0x00, 0x18), 2, 0},
+	{"multu", R_FORMAT, MKOPCODE2(0x00, 0x19), 2, 0},
+	{"nor", R_FORMAT, MKOPCODE2(0x00, 0x27), 3, 0},
+	{"or", R_FORMAT, MKOPCODE2(0x00, 0x25), 3, 0},
+	{"slt", R_FORMAT, MKOPCODE2(0x00, 0x2A), 3, 0},
+	{"sltu", R_FORMAT, MKOPCODE2(0x00, 0x2B), 3, 0},
+	{"sub", R_FORMAT, MKOPCODE2(0x0, 0x22), 3, 0},
+	{"subu", R_FORMAT, MKOPCODE2(0x0, 0x23), 3, 0},
+	{"xor", R_FORMAT, MKOPCODE2(0x0, 0x26), 3, 0},
+        {"addi", I_FORMAT, MKOPCODE1(0x08), 3, 0},
+        {"bltz", I_FORMAT, MKOPCODE2(0x01, 0x0), 2, 0},
+        {"addiu", I_FORMAT, MKOPCODE1(0x09), 3, 0},
+        {"bgez", I_FORMAT, MKOPCODE2(0x01, 0x1), 2, 0},
+        {"andi", I_FORMAT, MKOPCODE1(0x0C), 3, 0},
+        {"beq", I_FORMAT, MKOPCODE1(0x04), 3, 0},
+        {"bne", I_FORMAT, MKOPCODE1(0x05), 3, 0},
+        {"blez", I_FORMAT, MKOPCODE2(0x06, 0x0), 2, 0},
+        {"bgtz", I_FORMAT, MKOPCODE2(0x07, 0x0), 2, 0},
+        {"slti", I_FORMAT, MKOPCODE1(0x0A), 3, 0},
+        {"lb", I_FORMAT, MKOPCODE1(0x20), 3, 1},
+        {"sltiu", I_FORMAT, MKOPCODE1(0x0B), 3, 0},
+        {"lbu", I_FORMAT, MKOPCODE1(0x24), 3, 1},
+        {"lh", I_FORMAT, MKOPCODE1(0x21), 3, 1},
+        {"ori", I_FORMAT, MKOPCODE1(0x0D), 3, 0},
+        {"lhu", I_FORMAT, MKOPCODE1(0x25), 3, 1},
+        {"xori", I_FORMAT, MKOPCODE1(0x0E), 3, 0},
+        {"lui", I_FORMAT, MKOPCODE1(0x0F), 2, 0},
+        {"lw", I_FORMAT, MKOPCODE1(0x23), 3, 1},
         {"lwc1", I_FORMAT, MKOPCODE1(0x31), 3, 1},
-        {"sb", I_FORMAT, MKOPCODE1(0x28), 3, 1, 0},
-        {"sh", I_FORMAT, MKOPCODE1(0x29), 3, 1, 0},
-        {"sw", I_FORMAT, MKOPCODE1(0x2B), 3, 1, 0},
-        {"swc1", I_FORMAT, MKOPCODE1(0x39), 3, 1, 0},
-        {"j", J_FORMAT, MKOPCODE1(0x02), 1, 0, 1},
-        {"jal", J_FORMAT, MKOPCODE1(0x03), 1, 0, 1},
-        {"move", R_FORMAT, MKOPCODE2(0xFF, 0x01), 2, 0, 0},
+        {"sb", I_FORMAT, MKOPCODE1(0x28), 3, 1},
+        {"sh", I_FORMAT, MKOPCODE1(0x29), 3, 1},
+        {"sw", I_FORMAT, MKOPCODE1(0x2B), 3, 1},
+        {"swc1", I_FORMAT, MKOPCODE1(0x39), 3, 1},
+        {"j", J_FORMAT, MKOPCODE1(0x02), 1, 0},
+        {"jal", J_FORMAT, MKOPCODE1(0x03), 1, 0},
+        {"move", R_FORMAT, MKOPCODE2(0xFF, 0x01), 2, 0},
 };
 
 const int function_count = sizeof(functions) / sizeof(functions[0]);
 
-const char *reg_names[] = { "$zero", "$at", "$v0", "$v1",
-                            "$a0", "$a1", "$a2", "$a3",
-                            "$t0", "$t1", "$t2", "$t3",
-                            "$t4", "$t5", "$t6", "$t7",
-                            "$s0", "$s1", "$s2", "$s3",
-                            "$s4", "$s5", "$s6", "$s7",
-                            "$t8", "$t9", "$k0", "$k1",
-                            "$gp", "$sp", "$fp", "$ra"
-                          };
+extern MemPool *mpool;
+extern map<uint32_t, void *> externalFuncHandles;
 
-const char *reg_names1[] = { "$r0", "$r1", "$r2", "$r3",
-                            "$r4", "$r5", "$r6", "$r7",
-                            "$r8", "$r9", "$r10", "$r11",
-                            "$r12", "$r13", "$r14", "$r15",
-                            "$r16", "$r17", "$r18", "$r19",
-                            "$r20", "$r21", "$r22", "$r23",
-                            "$r24", "$r25", "$r26", "$r27",
-                            "$r28", "$r29", "$r30", "$r31"
-                          };
-
-extern MemPool *mparser_pool;
-
-void reportError(const char *format, ...);
+void reportRuntimeError(const char *format, ...);
 
 /* Parser related functions */
 void *Mips32ParseAlloc(void *(*mallocProc)(size_t));
 void Mips32ParseFree(void *p, void (*freeProc)(void*));
 void Mips32Parse(void *yyp, int yymajor, TokenInfo *yyminor, MParserContext *ctx);
-
-static int _getRegisterIndex(const char *name, const char *reg_names[], int size)
-{
-    for (int i = 0; i<size; i++) {
-        if (strcmp(name, reg_names[i]) == 0) {
-            return i;
-        }
-    }
-
-	return -1;
-}
-
-int mips32_getRegisterIndex(const char *rname) {
-    int count = sizeof(reg_names) / sizeof(reg_names[0]);
-	int index;
-    
-	index = _getRegisterIndex(rname, reg_names, count);
-	if (index != -1)
-		return index;
-
-	return _getRegisterIndex(rname, reg_names1, count);
-}
 
 MIPS32Sim::MIPS32Sim()
 {
@@ -129,15 +90,13 @@ MIPS32Sim::MIPS32Sim()
     reg[SP_INDEX] = M_VIRTUAL_STACK_END_ADDR;
     reg[GP_INDEX] = M_VIRTUAL_GLOBAL_START_ADDR;
     stack_start_address = M_VIRTUAL_STACK_END_ADDR - (M_STACK_SIZE_WORDS * 4);
-	runtime_context = NULL;
+    runtimeCtx = NULL;
+    dbg = NULL;
 }
 
-const char *MIPS32Sim::getRegisterName(int regIndex)
+AsmDebugger *MIPS32Sim::getDebugger()
 {
-    if (regIndex >= 0 && regIndex <= 31)
-        return reg_names[regIndex];
-    else
-        return NULL;
+    return dbg;
 }
 
 bool MIPS32Sim::translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr)
@@ -147,7 +106,7 @@ bool MIPS32Sim::translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr)
     } else if (vaddr >= stack_start_address && vaddr < M_VIRTUAL_STACK_END_ADDR) {
         paddr = (vaddr - stack_start_address) + (M_GLOBAL_MEM_WORD_COUNT * 4);
     } else {
-        reportError("Runtime exception: fetch address out of limit 0x%x\n", vaddr);
+        reportRuntimeError("Runtime exception: fetch address out of limit 0x%x\n", vaddr);
         return false;
     }
     
@@ -159,7 +118,7 @@ int MIPS32Sim::readWord(unsigned int vaddr, uint32_t &result)
     uint32_t paddr;
     
     if ((vaddr % 4) != 0) {
-	reportError("Runtime exception: fetch address not aligned on word boundary 0x%x\n", vaddr);
+	reportRuntimeError("Runtime exception: fetch address not aligned on word boundary 0x%x\n", vaddr);
 	return 0;
     }
     
@@ -210,7 +169,7 @@ int MIPS32Sim::readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_exte
     uint32_t hwordMask;
 
     if ((vaddr % 2) != 0) {
-        reportError("Runtime exception: fetch address not aligned on halfword boundary 0x%x\n", vaddr);
+        reportRuntimeError("Runtime exception: fetch address not aligned on halfword boundary 0x%x\n", vaddr);
 	return 0;
     }
 
@@ -295,7 +254,7 @@ bool MIPS32Sim::getRegisterValue(string name, uint32_t &value)
     int regIndex = mips32_getRegisterIndex(name.c_str());
     
     if (regIndex < 0) {
-        reportError("Invalid register name '%s'\n", name.c_str());
+        reportRuntimeError("Invalid register name '%s'\n", name.c_str());
         return false;
     }
     
@@ -308,7 +267,7 @@ bool MIPS32Sim::setRegisterValue(string name, uint32_t value)
     int regIndex = mips32_getRegisterIndex(name.c_str());
     
     if (regIndex < 0) {
-        reportError("Invalid register name '%s'\n", name.c_str());
+        reportRuntimeError("Invalid register name '%s'\n", name.c_str());
         return false;
     }
     
@@ -323,8 +282,7 @@ bool MIPS32Sim::parseFile(istream *in, MParserContext &ctx)
     int token;
     void* pParser = Mips32ParseAlloc (malloc);
     
-    tk_pool = &(ctx.token_pool);
-    mparser_pool = &(ctx.parser_pool);
+    tk_pool = &(ctx.tokenPool);
 
     while ((token = lexer.getNextToken()) == MTK_EOL);
 
@@ -363,15 +321,27 @@ bool MIPS32Sim::parseFile(istream *in, MParserContext &ctx)
 
     tk_pool->freeAll();
     tk_pool = NULL;
-    mparser_pool = NULL;
 
     return (ctx.error == 0);
 }
 
-bool MIPS32Sim::resolveLabels(list<MInstruction *> &linst, vector<MInstruction *> &vinst)
+bool MIPS32Sim::getLabel(string label, uint32_t &target) 
+{
+    if (jumpTable != NULL) {
+        if (jumpTable->find(label) != jumpTable->end()) {
+            target = jumpTable->at(label);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    return false;
+}
+
+bool MIPS32Sim::resolveLabels(list<MInstruction *> &linst, vector<MInstruction *> &vinst, map<string, uint32_t> &jmpTbl)
 {
     list<MInstruction *>::iterator it = linst.begin();
-    map<string, int> lbl_map;
     int index = 0;
     
     while (it != linst.end()) {
@@ -380,7 +350,7 @@ bool MIPS32Sim::resolveLabels(list<MInstruction *> &linst, vector<MInstruction *
         if (inst->isA(MINST_TAGGED)) {
             MInstTagged *itagged = (MInstTagged *)inst;
             
-            lbl_map[itagged->tag] = index;
+            jmpTbl[itagged->tag] = index;
             inst = itagged->inst;
         }
         
@@ -392,74 +362,20 @@ bool MIPS32Sim::resolveLabels(list<MInstruction *> &linst, vector<MInstruction *
         it++;
         
     }
+
+    return true;
+}
+
+bool MIPS32Sim::loadFile(istream *in, vector<MInstruction *> &instList, map<string, uint32_t> &labelMap)
+{
+    MParserContext parser_ctx;
     
-    vector<MInstruction *>::iterator it_inst = vinst.begin();
+    if (!parseFile(in, parser_ctx)) {
+        return false;
+    }
     
-    while (it_inst != vinst.end()) {
-        MInstruction *inst = *it_inst;
-        
-        switch (inst->getKind()) {
-            case MINST_1ARG:
-            case MINST_2ARG:
-            case MINST_3ARG: {
-                MIPS32Function *f = f = getFunctionByName(inst->name.c_str());
-                
-                if (f == NULL) {
-                    reportError("Invalid instruction '%s'\n", inst->name.c_str());
-                    return false;
-                }
-                
-                if (f->is_branch) {
-                    if (inst->isA(MINST_1ARG)) {
-                        MInst_1Arg *j_inst = (MInst_1Arg *)inst;
-                        if (j_inst->arg1->getKind() == MARG_IDENTIFIER) {
-                            MArgIdentifier *arg_id = (MArgIdentifier *)j_inst->arg1;
-
-                            if (lbl_map.find(arg_id->name) != lbl_map.end()) {
-                                int target = lbl_map[arg_id->name];
-                                MArgConstant *arg_imm = new MArgConstant(target);
-                                j_inst->arg1 = arg_imm;
-                                delete arg_id;
-                            } else {
-                                reportError("Invalid label '%s' in instruction '%s'\n", arg_id->name.c_str(), j_inst->name.c_str());
-
-                                return false;
-                            }
-                        } else {
-                            reportError("Invalid argument in '%s' instruction '%s'\n", j_inst->name.c_str(), j_inst->arg1->toString().c_str());
-
-                            return false;
-                        }
-                    } else if (inst->isA(MINST_2ARG)) {
-                        reportError("Invalid instruction '%s'\n", inst->name.c_str());
-
-                        return false;
-                    } else if (inst->isA(MINST_3ARG)) {
-                        MInst_3Arg *j_inst = (MInst_3Arg *)inst;
-                        if (j_inst->arg3->getKind() == MARG_IDENTIFIER) {
-                            MArgIdentifier *arg_id = (MArgIdentifier *)j_inst->arg3;
-
-                            if (lbl_map.find(arg_id->name) != lbl_map.end()) {
-                                int target = lbl_map[arg_id->name];
-                                MArgConstant *arg_imm = new MArgConstant(target);
-                                j_inst->arg3 = arg_imm;
-                                delete arg_id;
-                            } else {
-                                reportError("Invalid label '%s' in instruction '%s'\n", arg_id->name.c_str(), j_inst->name.c_str());
-                                
-                                return false;
-                            }
-                        } else {
-                            reportError("Invalid argument in '%s' instruction '%s'\n", j_inst->name.c_str(), j_inst->arg3->toString().c_str());
-                            
-                            return false;
-                        }                    
-                    }
-                }
-            }
-        }
-        
-        it_inst ++;
+    if (!resolveLabels(parser_ctx.instList, instList, labelMap)) {
+        return false;
     }
     
     return true;
@@ -469,22 +385,26 @@ bool MIPS32Sim::exec(istream *in)
 {
     MParserContext parse_ctx;
 
+    mpool = &(parse_ctx.parserPool);
     if (!parseFile(in, parse_ctx)) {
         return false;
     }
     
     vector<MInstruction *> vinst;
+    map<string, uint32_t> jmpTbl;
     
-    if (!resolveLabels(parse_ctx.input_list, vinst)) {
+    if (!resolveLabels(parse_ctx.instList, vinst, jmpTbl)) {
         return false;
     }
     
     int count = vinst.size();
-    MRtContext *prev_ctx = runtime_context;
+    MRtContext *prev_ctx = runtimeCtx;
+    map<string, uint32_t> *prev_jmpTbl = jumpTable;
     MRtContext ctx;
     bool result = true;
 
-    runtime_context = &ctx;
+    runtimeCtx = &ctx;
+    jumpTable = &jmpTbl;
 
     ctx.pc = 0;
     ctx.stop = false;
@@ -492,27 +412,156 @@ bool MIPS32Sim::exec(istream *in)
         MInstruction *inst = vinst[ctx.pc];
         
         ctx.line = inst->line;
-        if (!execInstruction(inst, ctx)) {
+        ctx.pc++;
+        if (!execInstruction(inst)) {
             result = false;
             break;
         }
 
-        if (ctx.stop) break;
-        if (ctx.pc >= count) break;
+        if (ctx.stop || (ctx.pc >= count)) break;
     }
     
-	runtime_context = prev_ctx;
+    runtimeCtx = prev_ctx;
+    mpool = NULL;
 
     return result;
 }
 
-bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
+bool MIPS32Sim::debug(string asm_file) 
+{
+    if (dbg != NULL) {
+        printf("The simulator is in debug mode already.\n");
+        return false;
+    }
+    
+    ifstream in;
+    
+    in.open(asm_file.c_str(), ifstream::in|ifstream::binary);
+
+    if (!in.is_open()) {
+        printf("Cannot open file '%s'\n", asm_file.c_str());
+        return false;
+    }
+    
+    vector<MInstruction *> instList;
+
+    jumpTable = new map<string, uint32_t>;
+    mpool = new MemPool();
+    
+    if (!loadFile(&in, instList, *jumpTable)) {
+        delete jumpTable;
+        delete mpool;
+        
+        return false;
+    }
+    
+    vector<string> sourceLines;
+
+    in.clear();
+    in.seekg(0);
+    
+    if (in.fail()) {
+        cout << "Oops. Fail." << endl;
+        dbg->stop();
+        return false;
+    }
+    
+    while (!in.eof()) {
+        string line;
+        getline(in, line);
+        sourceLines.push_back(line);
+    };
+    
+    runtimeCtx = new MRtContext;
+    
+    dbg = new MIPS32Debugger(this, instList, mpool);
+    dbg->setSourceLines(sourceLines);
+        
+    in.close();
+    
+    return true;
+}
+
+bool MIPS32Sim::doNativeCall(uint32_t funcAddr)
+{
+    uint32_t r_sp, r_v0, r_v1;
+    uint32_t p_index;
+    void *old_stack_ptr, *new_stack_ptr;
+    HLIB hfunc;
+
+    r_sp = reg[SP_INDEX];
+
+    //Push a0, a1, a2, a4
+    r_sp -= 4;
+
+    if (!writeWord(r_sp, reg[A3_INDEX]))
+        return false;
+    
+    r_sp -= 4;
+    
+    if (!writeWord(r_sp, reg[A2_INDEX]))
+        return false;
+
+    r_sp -= 4;
+
+    if (!writeWord(r_sp, reg[A1_INDEX]))
+        return false;
+
+    r_sp -= 4;
+
+    if (!writeWord(r_sp, reg[A0_INDEX]))
+        return false;
+    
+    
+    if (!translateVirtualToPhysical(r_sp, p_index))
+        return false;
+    
+    new_stack_ptr = (void *)(&mem[p_index / 4]);
+    hfunc = externalFuncHandles[funcAddr];
+
+#ifdef _WIN32
+    __asm {
+        mov old_stack_ptr, esp
+        mov esp, new_stack_ptr
+        call [hfunc]
+        mov r_v0, eax
+        mov r_v1, edx
+        mov esp, old_stack_ptr
+    };
+#elif __linux__
+    asm volatile ("xchg %%esp, %0\n\t"
+    : "=r"(old_stack_ptr) /* output */
+    : "0"(new_stack_ptr) /* input */
+    );
+
+    asm volatile ("call *%2\n" : "=a"(r_v0), "=d"(r_v1) : "r"(hfunc));
+    asm volatile ("mov %0, %%esp\n\t" : : "r"(old_stack_ptr) );
+#else
+#error "Unknownk compiler"
+#endif
+    
+    reg[V0_INDEX] = r_v0;
+    reg[V1_INDEX] = r_v1;
+    
+    readWord(r_sp, reg[A0_INDEX]);
+    r_sp += 4;
+    readWord(r_sp, reg[A1_INDEX]);
+    r_sp += 4;
+    readWord(r_sp, reg[A2_INDEX]);
+    r_sp += 4;
+    readWord(r_sp, reg[A3_INDEX]);
+    
+    return true;
+}
+
+bool MIPS32Sim::execInstruction(MInstruction *inst)
 {
     int count1, count2, argcount;
     MIPS32Function *f;
     uint32_t values[3];
+    MRtContext *ctx = runtimeCtx;
     
-    ctx.pc++;
+    lastResult.init();
     
     if (inst->isA(MCMD_Show)) {
         MCmd_Show *shCmd = (MCmd_Show *)inst;
@@ -527,14 +576,14 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
         
         return cmd->exec(this);
     } else if (inst->isA(MCMD_Stop)) {
-        ctx.stop = true;
+        ctx->stop = true;
         return true;
     }
 
     f = getFunctionByName(inst->name.c_str());
     
     if (f == NULL) {
-        reportError("Invalid instruction '%s'\n", inst->name.c_str());
+        reportRuntimeError("Invalid instruction '%s'\n", inst->name.c_str());
         return false;
     }
 
@@ -543,11 +592,11 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
     argcount = inst->getArgumentCount();
     
     if ((argcount != count1) && (argcount != count2)) {
-        reportError("Invalid number of arguments to function '%s', expected %d, found %d\n",
+        reportRuntimeError("Invalid number of arguments to function '%s', expected %d, found %d\n",
                 f->name, f->argcount, argcount);
         return false;
     }
-    if (inst->resolveArguments(values) < 0) {
+    if (!inst->resolveArguments(this, values)) {
         return false;
     }
 
@@ -599,7 +648,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
                 }
                 
                 default:
-                    reportError("%d: BUG in machine\n", __LINE__);
+                    reportRuntimeError("%d: BUG in machine\n", __LINE__);
                     return false;
             }
             
@@ -611,12 +660,12 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             break;
         }
         default:
-            reportError("%d: BUG in machine\n", __LINE__);
+            reportRuntimeError("%d: BUG in machine\n", __LINE__);
             return false;
     }
 
     if (rd == 0) {
-        reportError("Register $zero cannot be used as target in instruction '%s'\n", f->name);
+        reportRuntimeError("Register $zero cannot be used as target in instruction '%s'\n", f->name);
         return false;
     }
 
@@ -625,7 +674,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
         { 
             unsigned int result = *p1 + *p2;
             if (ARITH_OVFL(result, *p1, *p2, 32)) {
-                reportError("Aritmethic overflow in 'add' operation\n");
+                reportRuntimeError("Aritmethic overflow in 'add' operation\n");
             } else {
                 *p0 = result;
             }
@@ -660,10 +709,21 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             break;
         case FN_SRAV: // srav rd,rt,rs ; R Format
             break;
-        case FN_JALR: // jalr rd,rs ; R Format
+        case FN_JALR: // jalr rs ; R Format
+            reg[RA_INDEX] = ctx->pc;
+            if ((*p0 >= M_VIRTUAL_EXTFUNC_START_ADDR) && (*p0 < M_VIRTUAL_GLOBAL_START_ADDR)) {
+                return doNativeCall(*p0);
+            } else {
+                ctx->pc = *p0;
+            }
             break;
         case FN_JR: // jr rs ; R Format
-            ctx.pc = *p0;
+            if ((*p0 >= M_VIRTUAL_EXTFUNC_START_ADDR) && (*p0 < M_VIRTUAL_GLOBAL_START_ADDR)) {
+                reportRuntimeError("Jump to native functions are not valid. Use JALR if you want to call a native function.\n");
+                return false;
+            } else {
+                ctx->pc = *p0;
+            }
             break;
         case FN_MFHI: // mfhi rd ; R Format
             *p0 = (uint32_t)(hi_lo >> 32);
@@ -718,11 +778,11 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             break;
         case FN_BEQ: // beq rs,rt, label ; I Format
             if (*p0 == *p1)
-                ctx.pc = imm;
+                ctx->pc = imm;
             break;
         case FN_BNE: // bne rs,rt ; I Format
             if (*p0 != *p1)
-                ctx.pc = imm;
+                ctx->pc = imm;
             break;
         case FN_BLEZ: // blez rs ; I Format
             break;
@@ -739,7 +799,8 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             unsigned int vaddr = *p1 + imm;
             uint32_t result;
             if (!readByte(vaddr, result, true)) {
-                reportError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                return false;
             } else {
                 *p0 = result;
             }
@@ -751,7 +812,8 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             uint32_t result;
             
             if (!readByte(vaddr, result, false)) {
-                reportError("Invalid virtual address '%08X'\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X'\n", vaddr);
+                return false;
             } else {
                 *p0 = result;
             }
@@ -762,7 +824,8 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             unsigned int vaddr = *p1 + imm;
             uint32_t result;
             if (!readHalfWord(vaddr, result, true)) {
-                reportError("Invalid virtual address '%08X'\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X'\n", vaddr);
+                return false;
             } else {
                 *p0 = result;
             }
@@ -776,7 +839,8 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             unsigned int vaddr = *p1 + imm;
             uint32_t result;
             if (!readHalfWord(vaddr, result, false)) {
-                reportError("Invalid virtual address '%08X'\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X'\n", vaddr);
+                return false;
             } else {
                 *p0 = result;
             }
@@ -794,7 +858,8 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             uint32_t result;
             
             if (!readWord(vaddr, result)) {
-                reportError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                return false;
             } else {
                 *p0 = result;
             }
@@ -808,7 +873,8 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             uint8_t value = (uint8_t) (*p0 & 0xFF);
 
             if (!writeByte(vaddr, value)) {
-                reportError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                return false;
             }
             break;
         }
@@ -819,36 +885,38 @@ bool MIPS32Sim::execInstruction(MInstruction *inst, MRtContext &ctx)
             unsigned int vaddr = *p1 + imm;
             
             if (!writeWord(vaddr, *p0)) {
-                reportError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                return false;
             }
             break;
         }
         case FN_SWC1: // swc1 rt, immediate(rs) ; I Format
             break;
         case FN_J: // j label
-            ctx.pc = imm;
+            if ((imm >= M_VIRTUAL_EXTFUNC_START_ADDR) && (imm < M_VIRTUAL_GLOBAL_START_ADDR)) {
+                reportRuntimeError("Jump to native functions are not valid. Use JAL if you want to call a native function.\n");
+                return false;
+            } else {
+                ctx->pc = imm;
+            }
             break;
         case FN_JAL: // jal label
-            reg[RA_INDEX] = ctx.pc;
-            ctx.pc = imm;
+            reg[RA_INDEX] = ctx->pc;
+            if ((imm >= M_VIRTUAL_EXTFUNC_START_ADDR) && (imm < M_VIRTUAL_GLOBAL_START_ADDR)) {
+                return doNativeCall(imm);
+            } else {
+                ctx->pc = imm;
+            }
             break;
         case FN_MOVE: // move rd, rt
             *p0 = *p1;
             break;
     }
-    
-	last_result.address = rd;
-	last_result.refType = MRT_Reg;
-    
-	return true;
-}
 
-void MIPS32Sim::showRegisters()
-{
-    printf("\nRegister\tHexadecimal\tDecimal\n");
-    for (int i=0; i<32; i++) {
-        printf("%s\t\t%08X\t%d\n", getRegisterName(i), reg[i], reg[i]);
-    }
+    lastResult.setSim(this);
+    lastResult.setRegIndex(rd);
+    
+    return true;
 }
 
 MIPS32Function *getFunctionByName(const char *name) 
@@ -871,12 +939,4 @@ MIPS32Function *getFunctionByOpcode(unsigned int opcode)
     }
 
     return NULL;
-}
-
-void check_register_index(int index)
-{
-	if (index >= 0 && index <= 31)
-		return;
-	printf("Invalid register index %d\n", index);
-	exit(0);
 }

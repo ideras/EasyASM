@@ -56,8 +56,8 @@ void reportError(const char *format, ...);
 
 input ::= statements XTK_EOF. { /* Noting to do here */ }
 
-statements ::= statements XTK_EOL statement(S). { ctx->input_list.push_back((XInstruction *)S); }
-statements ::= statement(S) .                   { ctx->input_list.push_back((XInstruction *)S); }
+statements ::= statements XTK_EOL statement(S). { ctx->instList.push_back((XInstruction *)S); }
+statements ::= statement(S) .                   { ctx->instList.push_back((XInstruction *)S); }
 
 statement(R) ::= instruction(I).  { R = I; }
 statement(R) ::= command(C).     { R = C; }

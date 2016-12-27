@@ -12,6 +12,7 @@
 
 using namespace std;
 
+#define MTK_ERROR 9999
 #define is_opcode(t)        ((t)>=0 && (t)<=4095)
 
 class MInstruction;
@@ -42,5 +43,8 @@ private:
     int currentLine;
     TokenInfo tokenInfo;
 };
+
+int mips32_getRegisterIndex(const char *rname);
+string mips32_getRegisterName(unsigned int regIndex);
 
 #endif // MIP32LEXER_H

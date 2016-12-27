@@ -16,7 +16,7 @@ using namespace std;
 
 #define UNUSED(x) ((void)(x))
 
-void reportError(const char *format, ...);
+void reportRuntimeError(const char *format, ...);
 
 #define ZX_MASK 1
 #define SX_MASK 2
@@ -239,7 +239,7 @@ public:
 
     bool eval(X86Sim *xsim, int resultSize, uint8_t flags, uint32_t &result) {
         if (!xsim->getLabel(name, result)) {
-            reportError("Invalid label '%s'\n", name.c_str());
+            reportRuntimeError("Invalid label '%s'\n", name.c_str());
             return false;
         }
         else 

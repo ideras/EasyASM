@@ -7,12 +7,9 @@
 #include "mips32_lexer.h"
 #include "mips32_parser.h"
 #include "mempool.h"
+#include "mips32_sim.h"
 
 using namespace std;
-
-#define MTK_ERROR 9999
-
-void reportError(const char *format, ...);
 
 #define RETURN_TOKEN(tk)    \
     do {                    \
@@ -46,6 +43,7 @@ static MKeyword m_keywords[] = {
 	{"unsigned", MCKW_UNSIGNED },
 	{"binary", MCKW_BINARY },
         {"byte", MKW_BYTE},
+        {"ascii", MCKW_ASCII},
         {"hword", MKW_HWORD},
         {"word", MKW_WORD},
         {"memory", MCKW_MEM},
@@ -57,7 +55,30 @@ static MKeyword m_commands[] = {
 	{"#set", MCKW_SET },
 	{"#exec", MCKW_EXEC },
         {"#stop", MCKW_STOP },
+        {"#paddr", MCKW_PADDR},
+        {"#hihw", MCKW_HIHW},
+        {"#lohw", MCKW_LOHW},
 };
+
+const char *reg_names[] = { "$zero", "$at", "$v0", "$v1",
+                            "$a0", "$a1", "$a2", "$a3",
+                            "$t0", "$t1", "$t2", "$t3",
+                            "$t4", "$t5", "$t6", "$t7",
+                            "$s0", "$s1", "$s2", "$s3",
+                            "$s4", "$s5", "$s6", "$s7",
+                            "$t8", "$t9", "$k0", "$k1",
+                            "$gp", "$sp", "$fp", "$ra"
+                          };
+
+const char *reg_names1[] = { "$r0", "$r1", "$r2", "$r3",
+                            "$r4", "$r5", "$r6", "$r7",
+                            "$r8", "$r9", "$r10", "$r11",
+                            "$r12", "$r13", "$r14", "$r15",
+                            "$r16", "$r17", "$r18", "$r19",
+                            "$r20", "$r21", "$r22", "$r23",
+                            "$r24", "$r25", "$r26", "$r27",
+                            "$r28", "$r29", "$r30", "$r31"
+                          };
 
 const int KWCmdCount = sizeof(m_commands)/sizeof(MKeyword);
 
@@ -69,6 +90,34 @@ static int lookUpWord(MKeyword kw[], int size, string str)
     }
 
     return MTK_ID;
+}
+
+static int _getRegisterIndex(const char *name, const char *reg_names[], int size)
+{
+    for (int i = 0; i<size; i++) {
+        if (strcmp(name, reg_names[i]) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+int mips32_getRegisterIndex(const char *rname) 
+{
+    int count = sizeof(reg_names) / sizeof(reg_names[0]);
+	int index;
+    
+	index = _getRegisterIndex(rname, reg_names, count);
+	if (index != -1)
+		return index;
+
+	return _getRegisterIndex(rname, reg_names1, count);
+}
+
+string mips32_getRegisterName(unsigned int regIndex)
+{
+    return ((regIndex<=31)? reg_names[regIndex] : "");
 }
 
 Mips32Lexer::Mips32Lexer(istream *in)
@@ -95,14 +144,16 @@ int Mips32Lexer::getNextToken()
 
         switch (ch) {
             case EOF: RETURN_TOKEN(MTK_EOF);
-            case '(': RETURN_TOKEN(MTK_OPENP);
-            case ')': RETURN_TOKEN(MTK_CLOSEP);
+            case '(': RETURN_TOKEN(MTK_LPAREN);
+            case ')': RETURN_TOKEN(MTK_RPAREN);
             case ',': RETURN_TOKEN(MTK_COMMA);
             case '-': RETURN_TOKEN(MTK_OP_MINUS);
             case '=': RETURN_TOKEN(MTK_OPEQUAL);
             case ':': RETURN_TOKEN(MTK_COLON);
             case '[': RETURN_TOKEN(MTK_LBRACKET);
             case ']': RETURN_TOKEN(MTK_RBRACKET);
+            case '@': RETURN_TOKEN(MTK_AT);
+            case '.': RETURN_TOKEN(MTK_DOT);
             case ';': {
                 ch = nextChar();
                 while (ch != '\n' && ch != EOF) {
@@ -129,6 +180,7 @@ int Mips32Lexer::getNextToken()
                 
                 ch = nextChar();
                 APPEND_SEQUENCE(isalnum(ch), tkText);
+                tokenInfo.intValue = mips32_getRegisterIndex(tkText.c_str());
                 RETURN_TOKEN(MTK_REGISTER);
             }
             case '"': {
@@ -147,7 +199,8 @@ int Mips32Lexer::getNextToken()
                 ch = nextChar();
                 
                 if (tkText.length() != 1) {
-                    reportError("Invalid character constant '%s'\n", tkText.c_str());
+                    tokenInfo.set("character constant '" + tkText + "'", currentLine);
+                    return MTK_ERROR;
                 }
                 tokenInfo.set(tkText, currentLine);
                 tokenInfo.intValue = (int)tkText[0];
@@ -163,12 +216,12 @@ int Mips32Lexer::getNextToken()
                 
                 tokenInfo.set(tkText, currentLine);
                 
-                int tokenId = lookUpWord(m_commands, KWCmdCount, tkText);
+                int tokenKW = lookUpWord(m_commands, KWCmdCount, tkText);
                 
-                if (tokenId != -1) 
-                    return tokenId;
+                if (tokenKW != MTK_ID) 
+                    return tokenKW;
                 else {
-                    reportError("Invalid command name '%s'\n", tkText.c_str());
+                    tokenInfo.set("command name '" + tkText + "'", currentLine);
                     return MTK_ERROR;
                 }
             }
@@ -185,8 +238,7 @@ int Mips32Lexer::getNextToken()
                         APPEND_SEQUENCE((ch=='0') || (ch=='1'), tkText);
 						
                         if (tkText.empty()) {
-                            reportError("Invalid binary constant detected at line %d\n", currentLine);
-
+                            tokenInfo.set("binary constant '0b'", currentLine);
                             return MTK_ERROR;
                         }
 
@@ -202,8 +254,7 @@ int Mips32Lexer::getNextToken()
                         APPEND_SEQUENCE(isxdigit(ch), tkText);
 
                         if (tkText.empty()) {
-                            reportError("Invalid hexadecimal constant detected at line %d\n", currentLine);
-
+                            tokenInfo.set("hexadecimal constant '0x'", currentLine);
                             return MTK_ERROR;
                         }
                         tokenInfo.set(tkText, currentLine);
@@ -221,7 +272,7 @@ int Mips32Lexer::getNextToken()
                     } else {
                         ungetChar(ch);
 
-						tokenInfo.tokenLexeme += prevCh;
+                        tokenInfo.tokenLexeme += prevCh;
                         tokenInfo.intValue = prevCh - '0';
 
                         return MTK_DEC_CONSTANT;
@@ -234,7 +285,7 @@ int Mips32Lexer::getNextToken()
                     return lookUpWord(m_keywords, KWCount, tkText);
 
                 } else {
-                    reportError("Invalid symbol '%X' detected at line %d\n", ch, currentLine);
+                    tokenInfo.set(string("symbol '") + ((char)ch) + string("'"), currentLine);
                     return MTK_ERROR;
                 }
             }
@@ -244,17 +295,18 @@ int Mips32Lexer::getNextToken()
 
 string Mips32Lexer::getTokenString(int token, TokenInfo *info)
 {
-    string tokenName;
+    string tokenName = "";
 
     switch (token) {
     case MTK_EOF: tokenName = "end of input"; break;
     case MTK_EOL: tokenName = "end of line"; break;
     case MTK_REGISTER: tokenName = "register"; break;
+    case MTK_ERROR: tokenName = ""; break;
 
     case MTK_OPEQUAL: tokenName = "operator"; break;
     case MTK_COMMA:
-    case MTK_OPENP:
-    case MTK_CLOSEP:
+    case MTK_LPAREN:
+    case MTK_RPAREN:
     case MTK_COLON:
     case MTK_LBRACKET:
     case MTK_RBRACKET:        
@@ -271,8 +323,18 @@ string Mips32Lexer::getTokenString(int token, TokenInfo *info)
 
     string result = tokenName;
 
-    if ( info != NULL && (token != MTK_EOL) && (token != MTK_EOF) )
-        result += " '" + info->tokenLexeme + "'";
+    if (info != NULL) {
+        switch (token) {
+            case MTK_ERROR:
+                result += info->tokenLexeme;
+                break;
+            case MTK_EOL:
+            case MTK_EOF:
+                break;
+            default:
+                result += " '" + info->tokenLexeme + "'";
+        }
+    }
 
     return result;
 }

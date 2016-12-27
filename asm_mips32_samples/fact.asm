@@ -1,6 +1,9 @@
 
 #set $a0 = 6
-jal fact
+; lui $s0, #hihw(fact)
+; ori $s0, $s0, #lohw(fact)
+#set $s0 = fact
+jalr $s0
 
 #show $v0
 #stop

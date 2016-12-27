@@ -1,49 +1,50 @@
 #include <iostream>
-#include "x86_dbg.h"
-#include "x86_tree.h"
+#include "mips32_dbg.h"
+#include "mips32_sim.h"
 
-//X86 debugger functions
-void X86Debugger::showStatus()
+using namespace std;
+
+void MIPS32Debugger::showStatus()
 {
-    XRtContext *ctx = sim->runtimeCtx;
-    XInstruction *inst = instList[ctx->ip];
+    MRtContext *ctx = sim->runtimeCtx;
+    MInstruction *inst = instList[ctx->pc];
     
     cout << inst->line << ": " <<  sourceLines[inst->line - 1] << endl;
 }
 
-void X86Debugger::start()
+void MIPS32Debugger::start()
 {
-    sim->runtimeCtx->ip = 0;
+    sim->runtimeCtx->pc = 0;
     sim->runtimeCtx->stop = false;
 }
 
-bool X86Debugger::next()
+bool MIPS32Debugger::next()
 {
-    XRtContext *ctx = sim->runtimeCtx;
-    XInstruction *inst = instList[ctx->ip];
+    MRtContext *ctx = sim->runtimeCtx;
+    MInstruction *inst = instList[ctx->pc];
     int count = instList.size();
         
     ctx->line = inst->line;
-    ctx->ip ++;
+    ctx->pc ++;
     
-    if (!inst->exec(sim, sim->lastResult)) {
+    if (!sim->execInstruction(inst)) {
         return false;
     }
         
-    if (ctx->stop || (ctx->ip >= count)) {
+    if (ctx->stop || (ctx->pc >= count)) {
         finished = true;
     }
 
     return true;
 }
 
-bool X86Debugger::run()
+bool MIPS32Debugger::run()
 {
-    XRtContext *ctx = sim->runtimeCtx;
+    MRtContext *ctx = sim->runtimeCtx;
     int count = instList.size();
         
     while (1) {
-        XInstruction *inst = instList[ctx->ip];
+        MInstruction *inst = instList[ctx->pc];
         
         if (breakpoints.find(inst->line) != breakpoints.end()) {
             if (inBreakpoint)
@@ -57,13 +58,13 @@ bool X86Debugger::run()
         }
         
         ctx->line = inst->line;
-        ctx->ip ++;
+        ctx->pc ++;
 
-        if (!inst->exec(sim, sim->lastResult)) {
+        if (!sim->execInstruction(inst)) {
             return false;
         }
 
-        if (ctx->stop || (ctx->ip >= count)) {
+        if (ctx->stop || (ctx->pc >= count)) {
             finished = true;
             break;
         }
@@ -72,33 +73,32 @@ bool X86Debugger::run()
     return true;
 }
 
-void X86Debugger::stop()
+void MIPS32Debugger::stop()
 {
     delete mPool; //This releases all the tree nodes
     
     delete sim->runtimeCtx;
-    delete sim->jumpTbl;
+    delete sim->jumpTable;
 
     sim->runtimeCtx = NULL;
-    sim->jumpTbl = NULL;
+    sim->jumpTable = NULL;
     sim->dbg = NULL;
     
     delete this;
 }
 
-bool X86Debugger::doSimCommand(string cmd)
+bool MIPS32Debugger::doSimCommand(string cmd)
 {
     stringstream in;
             
     in.str(cmd);
 
-    XParserContext ctx;
+    MParserContext ctx;
 
     if (sim->parseFile(&in, ctx)) {
-        XInstruction *inst = ctx.instList.front();
-        XReference result;
+        MInstruction *inst = ctx.instList.front();
 
-        inst->exec(sim, result);
+        sim->execInstruction(inst);
     } else {
         cout << "Error in command." << endl;
         return false;

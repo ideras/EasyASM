@@ -10,7 +10,7 @@ using namespace std;
 
 #define XTK_ERROR 9999
 
-void reportError(const char *format, ...);
+void reportRuntimeError(const char *format, ...);
 
 #define RETURN_TOKEN(tk)    \
     do {                    \
@@ -228,7 +228,7 @@ int X86Lexer::getNextToken()
                 ch = nextChar();
                 
                 if (tkText.length() != 1) {
-                    reportError("Invalid character constant '%s'\n", tkText.c_str());
+                    reportRuntimeError("Invalid character constant '%s'\n", tkText.c_str());
                 }
                 tokenInfo.set(tkText, currentLine);
                 tokenInfo.intValue = (int)tkText[0];
@@ -255,7 +255,7 @@ int X86Lexer::getNextToken()
                         APPEND_SEQUENCE((ch=='0') || (ch=='1'), tkText);
 						
                         if (tkText.empty()) {
-                            reportError("Invalid binary constant detected at line %d\n", currentLine);
+                            reportRuntimeError("Invalid binary constant detected at line %d\n", currentLine);
 
                             return XTK_ERROR;
                         }
@@ -272,7 +272,7 @@ int X86Lexer::getNextToken()
                         APPEND_SEQUENCE(isxdigit(ch), tkText);
 
                         if (tkText.empty()) {
-                            reportError("Invalid hexadecimal constant detected at line %d\n", currentLine);
+                            reportRuntimeError("Invalid hexadecimal constant detected at line %d\n", currentLine);
 
                             return XTK_ERROR;
                         }
@@ -305,7 +305,7 @@ int X86Lexer::getNextToken()
                     return lookUpWord(kw, KWCount, tkText);
 
                 } else {
-                    reportError("Invalid symbol '%X' detected at line %d\n", ch, currentLine);
+                    printf("Invalid symbol '%c' detected at line %d\n", ch, currentLine);
                     return XTK_ERROR;
                 }
             }

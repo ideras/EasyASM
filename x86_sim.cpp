@@ -57,10 +57,15 @@ bool XReference::assign(uint32_t value)
 X86Sim::X86Sim()
 {
     gpr[R_ESP] = X_VIRTUAL_STACK_END_ADDR;
-    stack_start_address = X_VIRTUAL_STACK_END_ADDR - (X_STACK_SIZE_WORDS * 4);
-    runtime_context = NULL;
-    label_map = NULL;
+    stackStartAddress = X_VIRTUAL_STACK_END_ADDR - (X_STACK_SIZE_WORDS * 4);
+    runtimeCtx = NULL;
+    jumpTbl = NULL;
     dbg = NULL;
+}
+
+AsmDebugger *X86Sim::getDebugger()
+{
+    return dbg;
 }
 
 bool X86Sim::getRegValue(int regId, uint32_t &value)
@@ -199,7 +204,7 @@ bool X86Sim::parseFile(istream *in, XParserContext &ctx)
     int token;
     void* pParser = ParseAlloc (malloc);
     
-    tk_pool = &(ctx.token_pool);
+    tk_pool = &(ctx.tokenPool);
 
     while ((token = lexer.getNextToken()) == XTK_EOL);
 
@@ -273,38 +278,38 @@ bool X86Sim::resolveLabels(list<XInstruction *> &linst, vector<XInstruction *> &
 bool X86Sim::exec(istream *in)
 {
     if (dbg != NULL) {
-        reportError("The simulator is in debug mode.\n");
+        reportRuntimeError("The simulator is in debug mode.\n");
         return false;
     }
     
     XRtContext rt_ctx, *old_rt_ctx;
     XParserContext parser_ctx;
     
-    old_rt_ctx = runtime_context;
-    xpool = &(parser_ctx.parser_pool);
+    old_rt_ctx = runtimeCtx;
+    xpool = &(parser_ctx.parserPool);
 
-    runtime_context = NULL;
+    runtimeCtx = NULL;
     
     if (!parseFile(in, parser_ctx)) {
-        runtime_context = old_rt_ctx;
+        runtimeCtx = old_rt_ctx;
         return false;
     }
     
     vector<XInstruction *> vinst;
     map<string, uint32_t> lbl_map, *old_label_map;
     
-    runtime_context = &rt_ctx;
+    runtimeCtx = &rt_ctx;
     
-    if (!resolveLabels(parser_ctx.input_list, vinst, lbl_map)) {
-        runtime_context = old_rt_ctx;
+    if (!resolveLabels(parser_ctx.instList, vinst, lbl_map)) {
+        runtimeCtx = old_rt_ctx;
         return false;
     }
     
     bool result = true;
     int count = vinst.size();
     
-    old_label_map = label_map;
-    label_map = &lbl_map;
+    old_label_map = jumpTbl;
+    jumpTbl = &lbl_map;
     
     rt_ctx.ip = 0;
     rt_ctx.stop = false;
@@ -313,7 +318,7 @@ bool X86Sim::exec(istream *in)
         
         rt_ctx.line = inst->line;
         rt_ctx.ip ++;
-        if (!inst->exec(this, last_result)) {
+        if (!inst->exec(this, lastResult)) {
             result = false;
             break;
         }
@@ -322,8 +327,8 @@ bool X86Sim::exec(istream *in)
         if (rt_ctx.ip >= count) break;
     }
     
-    runtime_context = old_rt_ctx;
-    label_map = old_label_map;
+    runtimeCtx = old_rt_ctx;
+    jumpTbl = old_label_map;
     
     return result;
 }
@@ -331,7 +336,7 @@ bool X86Sim::exec(istream *in)
 bool X86Sim::debug(string asm_file) 
 {
     if (dbg != NULL) {
-        reportError("The simulator is in debug mode already.\n");
+        reportRuntimeError("The simulator is in debug mode already.\n");
         return false;
     }
     
@@ -340,17 +345,17 @@ bool X86Sim::debug(string asm_file)
     in.open(asm_file.c_str(), ifstream::in|ifstream::binary);
 
     if (!in.is_open()) {
-        reportError("Cannot open file '%s'\n", asm_file.c_str());
+        reportRuntimeError("Cannot open file '%s'\n", asm_file.c_str());
         return false;
     }
     
     vector<XInstruction *> instList;
 
-    label_map = new map<string, uint32_t>;
+    jumpTbl = new map<string, uint32_t>;
     xpool = new MemPool();
     
-    if (!loadFile(&in, instList, *label_map)) {
-        delete label_map;
+    if (!loadFile(&in, instList, *jumpTbl)) {
+        delete jumpTbl;
         delete xpool;
         
         return false;
@@ -373,7 +378,7 @@ bool X86Sim::debug(string asm_file)
         sourceLines.push_back(line);
     };
     
-    runtime_context = new XRtContext;
+    runtimeCtx = new XRtContext;
     
     dbg = new X86Debugger(this, instList, xpool);
     dbg->setSourceLines(sourceLines);
@@ -391,7 +396,7 @@ bool X86Sim::loadFile(istream *in, vector<XInstruction *> &instList, map<string,
         return false;
     }
     
-    if (!resolveLabels(parser_ctx.input_list, instList, labelMap)) {
+    if (!resolveLabels(parser_ctx.instList, instList, labelMap)) {
         return false;
     }
     
@@ -516,10 +521,10 @@ bool X86Sim::translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr)
 {
     if (vaddr >= X_VIRTUAL_GLOBAL_START_ADDR && vaddr <= X_VIRTUAL_GLOBAL_END_ADDR) {
         paddr = vaddr - X_VIRTUAL_GLOBAL_START_ADDR;
-    } else if (vaddr >= stack_start_address && vaddr < X_VIRTUAL_STACK_END_ADDR) {
-        paddr = (vaddr - stack_start_address) + (X_GLOBAL_MEM_WORD_COUNT * 4);
+    } else if (vaddr >= stackStartAddress && vaddr < X_VIRTUAL_STACK_END_ADDR) {
+        paddr = (vaddr - stackStartAddress) + (X_GLOBAL_MEM_WORD_COUNT * 4);
     } else {
-        reportError("Runtime exception: fetch address out of limit 0x%x\n", vaddr);
+        reportRuntimeError("Runtime exception: fetch address out of limit 0x%x\n", vaddr);
         return false;
     }
     
