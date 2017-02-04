@@ -21,7 +21,9 @@ X86Sim xsim;
 
 using namespace std;
 
-const char *getRegisterName(int index);
+#if defined(_MSC_VER)
+#define snprintf _snprintf
+#endif
 
 //Report runtime errors
 void reportRuntimeError(const char *format, ...)
@@ -223,7 +225,7 @@ int main(int argc, char *argv[])
     while (1) {
         line = readline(prompt);
 
-	if (line == NULL) continue;
+        if (line == NULL) continue;
 
         if (strcmp(line, "exit") == 0 || strcmp(line, "quit") == 0) {
             break;

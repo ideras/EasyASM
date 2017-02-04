@@ -358,7 +358,7 @@ bool MCmd_Show::exec(MIPS32Sim *sim)
             int wordSize = aref.getMemWordSize();
             uint32_t address = aref.getMemVAddr();
             uint32_t value;
-            int i ;
+            unsigned i ;
             
             if (!marg->argCount->getReference(sim, cref))
                 return false;
@@ -462,7 +462,6 @@ bool MCmd_Set::exec(MIPS32Sim *sim)
     } else if (arg->isA(MARG_MEMREF)) {
         MReference mref;
         MArgMemRef *marg = (MArgMemRef *)arg;
-        uint32_t base;
         
         if (!arg->getReference(sim, mref))
             return false;

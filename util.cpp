@@ -70,7 +70,7 @@ void printNumber(uint32_t value, int bitSize, PrintFormat format)
 
 bool tokenizeString(string str, vector<string> &strList)
 {
-    int index = 0;
+    unsigned index = 0;
     string currentToken = "";
     
     strList.clear();

@@ -1,5 +1,5 @@
 CXX = g++
-CPP_FLAGS = -fpermissive -g
+CPP_FLAGS = -fpermissive -g -m32
 CPP_SOURCES = generated/x86_parser.cpp generated/mips32_parser.cpp $(wildcard *.cpp)
 HEADERS = $(wildcard *.h) 
 OBJ = ${CPP_SOURCES:.cpp=.o}
@@ -10,7 +10,11 @@ TARGET = EasyASM
 all: ${TARGET}
 
 ${TARGET}: ${OBJ}
-	${CXX} -o $@ $^ ${LIBS}
+ifeq ($(LIBEDIT_DIR),)
+	${CXX} -m32 -o $@ $^ ${LIBS}
+else
+	${CXX} -L${LIBEDIT_DIR} -m32 -o $@ $^ ${LIBS}
+endif
 
 %.o: %.cpp
 	${CXX} -c -I ${INCLUDE} ${CPP_FLAGS} -o $@ $<

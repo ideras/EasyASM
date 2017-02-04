@@ -242,12 +242,12 @@ public:
 
     AsmDebugger *getDebugger();
     bool translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr);
-    int readWord(unsigned int vaddr, uint32_t &result);
-    int readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_extend);
-    int readByte(unsigned int vaddr, uint32_t &result, bool sign_extend);
-    int writeWord(unsigned int vaddr, uint32_t value);
-    int writeHalfWord(unsigned int vaddr, uint16_t value);
-    int writeByte(unsigned int vaddr, uint8_t value);
+    bool readWord(unsigned int vaddr, uint32_t &result);
+    bool readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_extend);
+    bool readByte(unsigned int vaddr, uint32_t &result, bool sign_extend);
+    bool writeWord(unsigned int vaddr, uint32_t value);
+    bool writeHalfWord(unsigned int vaddr, uint16_t value);
+    bool writeByte(unsigned int vaddr, uint8_t value);
     bool getRegisterValue(string name, uint32_t &value);
     bool setRegisterValue(string name, uint32_t value);
     int getSourceLine() { return runtimeCtx->line; }

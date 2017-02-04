@@ -236,10 +236,10 @@ public:
             case NBF_SignedDecimal: ss << ((int32_t)value); break;
             case NBF_UnsignedDecimal: ss << value; break;
             case NBF_Binary: {
-                bitset<32> bits(value);
-                
-                ss << "0b" << bits; 
-                
+					ss << "0b";
+				    for (uint32_t mask = (1 << 31); mask > 0; mask >>= 1) {
+						ss << (((value & mask) == 0) ? '0' : '1');
+					}                
                 break;
             }
             case NBF_Octal: ss << value; break;

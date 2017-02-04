@@ -113,13 +113,13 @@ bool MIPS32Sim::translateVirtualToPhysical(uint32_t vaddr, uint32_t &paddr)
     return true;
 }
 
-int MIPS32Sim::readWord(unsigned int vaddr, uint32_t &result)
+bool MIPS32Sim::readWord(unsigned int vaddr, uint32_t &result)
 {
     uint32_t paddr;
     
     if ((vaddr % 4) != 0) {
-	reportRuntimeError("Runtime exception: fetch address not aligned on word boundary 0x%x\n", vaddr);
-	return 0;
+        reportRuntimeError("Runtime exception: fetch address not aligned on word boundary 0x%x\n", vaddr);
+	    return false;
     }
     
     if (!translateVirtualToPhysical(vaddr, paddr))
@@ -127,15 +127,15 @@ int MIPS32Sim::readWord(unsigned int vaddr, uint32_t &result)
 
     result = mem[paddr / 4];
     
-    return 1;
+    return true;
 }
 
-int MIPS32Sim::readByte(unsigned int vaddr, uint32_t &result, bool sign_extend)
+bool MIPS32Sim::readByte(unsigned int vaddr, uint32_t &result, bool sign_extend)
 {
     uint32_t paddr;
 
     if (!translateVirtualToPhysical(vaddr, paddr))
-        return 0;
+        return false;
     
     uint32_t byteToRead = vaddr % 4;
     uint32_t byteMask;
@@ -154,29 +154,29 @@ int MIPS32Sim::readByte(unsigned int vaddr, uint32_t &result, bool sign_extend)
     if (sign_extend && ((result & (1 << 7))!=0))
         result |= 0xFFFFFF00;
 
-    return 1;
+    return true;
 
 }
 
-int MIPS32Sim::readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_extend)
+bool MIPS32Sim::readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_extend)
 {
     uint32_t paddr;
 
     if (!translateVirtualToPhysical(vaddr, paddr))
-        return 0;
+        return false;
         
     uint32_t hwordToRead = vaddr - (vaddr/4)*4, shift;
     uint32_t hwordMask;
 
     if ((vaddr % 2) != 0) {
         reportRuntimeError("Runtime exception: fetch address not aligned on halfword boundary 0x%x\n", vaddr);
-	return 0;
+        return false;
     }
 
     //This assumes Big Endian order
     switch (hwordToRead) {
         case 0: hwordMask = 0xFFFF0000; shift = 16; break;
-	case 2: hwordMask = 0x0000FFFF; shift = 0; break;
+        case 2: hwordMask = 0x0000FFFF; shift = 0; break;
     }
 
     uint32_t word = mem[paddr / 4];
@@ -185,26 +185,26 @@ int MIPS32Sim::readHalfWord(unsigned int vaddr, uint32_t &result, bool sign_exte
     if (sign_extend && (SIGN_BIT(result, 16) == 1))
         result |= 0xFFFF0000;
     
-    return 1;
+    return true;
 }
 
-int MIPS32Sim::writeWord(unsigned int vaddr, uint32_t value)
+bool MIPS32Sim::writeWord(unsigned int vaddr, uint32_t value)
 {
     uint32_t paddr;
 
     if (!translateVirtualToPhysical(vaddr, paddr))
-        return 0;
+        return false;
 
     mem[paddr / 4] = value;
-    return 1;
+    return true;
 }
 
-int MIPS32Sim::writeHalfWord(unsigned int vaddr, uint16_t value)
+bool MIPS32Sim::writeHalfWord(unsigned int vaddr, uint16_t value)
 {
     uint32_t paddr;
 
     if (!translateVirtualToPhysical(vaddr, paddr))
-        return 0;
+        return false;
         
     int pos = vaddr - (vaddr / 4) * 4;
     int shift;
@@ -218,15 +218,15 @@ int MIPS32Sim::writeHalfWord(unsigned int vaddr, uint16_t value)
     uint32_t word = mem[paddr / 4];
     mem[paddr / 4] = (word & mask) | (((uint32_t)(value)) << shift);
 
-    return 1;
+    return true;
 }
 
-int MIPS32Sim::writeByte(unsigned int vaddr, uint8_t value)
+bool MIPS32Sim::writeByte(unsigned int vaddr, uint8_t value)
 {
     uint32_t paddr;
 
     if (!translateVirtualToPhysical(vaddr, paddr))
-        return 0;
+        return false;
     
     int bytePos = vaddr % 4;
     int mask, shift;
@@ -242,7 +242,7 @@ int MIPS32Sim::writeByte(unsigned int vaddr, uint8_t value)
 
     mem[paddr / 4] = (word & mask) | (((uint32_t)(value)) << shift);
 
-    return 1;
+    return true;
 }
 
 static inline int isShiftFunction(int opcode) {
@@ -397,7 +397,7 @@ bool MIPS32Sim::exec(istream *in)
         return false;
     }
     
-    int count = vinst.size();
+    unsigned count = vinst.size();
     MRtContext *prev_ctx = runtimeCtx;
     map<string, uint32_t> *prev_jmpTbl = jumpTable;
     MRtContext ctx;
@@ -487,7 +487,7 @@ bool MIPS32Sim::doNativeCall(uint32_t funcAddr)
     uint32_t r_sp, r_v0, r_v1;
     uint32_t p_index;
     void *old_stack_ptr, *new_stack_ptr;
-    HLIB hfunc;
+    HFUNC hfunc;
 
     r_sp = reg[SP_INDEX];
 
@@ -529,13 +529,18 @@ bool MIPS32Sim::doNativeCall(uint32_t funcAddr)
         mov esp, old_stack_ptr
     };
 #elif __linux__
+#if defined(__i386__) || defined(__x86_64__)
     asm volatile ("xchg %%esp, %0\n\t"
-    : "=r"(old_stack_ptr) /* output */
-    : "0"(new_stack_ptr) /* input */
+      : "=r"(old_stack_ptr) /* output */
+      : "0"(new_stack_ptr) /* input */
     );
 
     asm volatile ("call *%2\n" : "=a"(r_v0), "=d"(r_v1) : "r"(hfunc));
     asm volatile ("mov %0, %%esp\n\t" : : "r"(old_stack_ptr) );
+#else
+# error Native call not supported in this architecture.
+#endif
+
 #else
 #error "Unknownk compiler"
 #endif

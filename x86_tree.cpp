@@ -1287,13 +1287,17 @@ IMPLEMENT_INSTRUCTION(Call) {
 			mov esp, old_stack_ptr
 		};
 #elif __linux__
-        asm volatile ("xchg %%esp, %0\n\t"
-        : "=r"(old_stack_ptr) /* output */
-        : "0"(new_stack_ptr) /* input */
-        );
+#if defined(__i386__) || defined(__x86_64__)
+    asm volatile ("xchg %%esp, %0\n\t"
+	  : "=r"(old_stack_ptr) /* output */
+	  : "0"(new_stack_ptr) /* input */
+	);
         
-        asm volatile ("call *%1\n" : "=a"(reg_eax) : "r"(hfunc));
-        asm volatile ("mov %0, %%esp\n\t" : : "r"(old_stack_ptr) );
+    asm volatile ("call *%1\n" : "=a"(reg_eax) : "r"(hfunc));
+    asm volatile ("mov %0, %%esp\n\t" : : "r"(old_stack_ptr) );
+#else
+# error Native call not supported in this architecture.
+#endif
 #else
 #error "Unknownk compiler"
 #endif
@@ -1788,6 +1792,7 @@ bool XCmdShow::exec(X86Sim *sim, XReference &result)
             return true;
         }
         case RT_Const: {
+			a_ref.deref(value);
             printNumber(value, BS_32, dataFormat);
             cout << endl;
 

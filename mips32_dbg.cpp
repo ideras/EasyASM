@@ -22,7 +22,7 @@ bool MIPS32Debugger::next()
 {
     MRtContext *ctx = sim->runtimeCtx;
     MInstruction *inst = instList[ctx->pc];
-    int count = instList.size();
+    unsigned count = instList.size();
         
     ctx->line = inst->line;
     ctx->pc ++;
@@ -41,7 +41,7 @@ bool MIPS32Debugger::next()
 bool MIPS32Debugger::run()
 {
     MRtContext *ctx = sim->runtimeCtx;
-    int count = instList.size();
+    unsigned count = instList.size();
         
     while (1) {
         MInstruction *inst = instList[ctx->pc];
