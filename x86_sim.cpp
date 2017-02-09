@@ -313,7 +313,8 @@ bool X86Sim::exec(istream *in)
     
     rt_ctx.ip = 0;
     rt_ctx.stop = false;
-    while (1) {
+    lastResult.type = RT_None;
+    while ((rt_ctx.ip < count) && !rt_ctx.stop) {
         XInstruction *inst = vinst[rt_ctx.ip];
         
         rt_ctx.line = inst->line;
@@ -322,9 +323,6 @@ bool X86Sim::exec(istream *in)
             result = false;
             break;
         }
-        
-        if (rt_ctx.stop) break;
-        if (rt_ctx.ip >= count) break;
     }
     
     runtimeCtx = old_rt_ctx;

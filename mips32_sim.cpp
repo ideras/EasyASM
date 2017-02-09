@@ -408,7 +408,8 @@ bool MIPS32Sim::exec(istream *in)
 
     ctx.pc = 0;
     ctx.stop = false;
-    while (1) {
+    lastResult.init();
+    while ((ctx.pc < count) && !ctx.stop) {
         MInstruction *inst = vinst[ctx.pc];
         
         ctx.line = inst->line;
@@ -417,8 +418,6 @@ bool MIPS32Sim::exec(istream *in)
             result = false;
             break;
         }
-
-        if (ctx.stop || (ctx.pc >= count)) break;
     }
     
     runtimeCtx = prev_ctx;
@@ -669,7 +668,13 @@ bool MIPS32Sim::execInstruction(MInstruction *inst)
             return false;
     }
 
-    if (rd == 0) {
+    bool write_register = f->opcode != FN_BEQ && 
+                          f->opcode != FN_BNE && 
+                          f->opcode != FN_SW &&
+                          f->opcode != FN_SH &&
+                          f->opcode != FN_SB;
+    
+    if (rd == 0 && write_register) {
         reportRuntimeError("Register $zero cannot be used as target in instruction '%s'\n", f->name);
         return false;
     }
