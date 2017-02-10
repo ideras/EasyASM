@@ -524,8 +524,6 @@ bool MCmd_Exec::exec(MIPS32Sim *sim)
 {
     ifstream in;
     
-    sim->lastResult.init();
-
     in.open(file_path.c_str(), ifstream::in|ifstream::binary);
 
     if (!in.is_open()) {
@@ -538,7 +536,8 @@ bool MCmd_Exec::exec(MIPS32Sim *sim)
     if (!sim->exec(&in)) {
         result = false;
     }
-        
+    
+    sim->lastResult.init();
     in.close();
     
     return result;

@@ -784,17 +784,13 @@ bool MIPS32Sim::execInstruction(MInstruction *inst)
         case FN_ADDI: // addi rt,rs,immediate ; I Format
             *p0 = (int32_t)*p1 + (int32_t)((int16_t)imm);
             break;
-        case FN_BLTZ: // bltz rs ; I Format
-            break;
         case FN_ADDIU: // addiu rt, rs, immediate ; I Format
             *p0 = *p1 + imm;
-            break;
-        case FN_BGEZ: // bgez rs, label ; I Format
             break;
         case FN_ANDI: // andi rt,rs,immediate ; I Format
             *p0 = *p1 & (imm & 0xFFFF);
             break;
-        case FN_BEQ: // beq rs,rt, label ; I Format
+        case FN_BEQ: // beq rs, rt, label ; I Format
             if (*p0 == *p1)
                 ctx->pc = imm;
             break;
@@ -802,9 +798,21 @@ bool MIPS32Sim::execInstruction(MInstruction *inst)
             if (*p0 != *p1)
                 ctx->pc = imm;
             break;
-        case FN_BLEZ: // blez rs ; I Format
+        case FN_BLEZ: // blez rs, label ; I Format
+            if (*((int32_t *)p0) <= 0)
+                ctx->pc = imm;
             break;
-        case FN_BGTZ: // bgtz rs ; I Format
+        case FN_BGEZ: // bgez rs, label ; I Format
+            if (*((int32_t *)p0) >= 0)
+                ctx->pc = imm;            
+            break;
+        case FN_BLTZ: // bltz rs, label ; I Format
+            if (*((int32_t *)p0) < 0)
+                ctx->pc = imm;
+            break;            
+        case FN_BGTZ: // bgtz rs, label ; I Format
+            if (*((int32_t *)p0) > 0)
+                ctx->pc = imm;            
             break;
         case FN_SLTI: // slti rt, rs, immediate ; I Format
             *p0 = (int32_t)*p1 < (int32_t)((int16_t)imm);
@@ -817,7 +825,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst)
             unsigned int vaddr = *p1 + imm;
             uint32_t result;
             if (!readByte(vaddr, result, true)) {
-                reportRuntimeError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X'\n", vaddr);
                 return false;
             } else {
                 *p0 = result;
@@ -891,19 +899,28 @@ bool MIPS32Sim::execInstruction(MInstruction *inst)
             uint8_t value = (uint8_t) (*p0 & 0xFF);
 
             if (!writeByte(vaddr, value)) {
-                reportRuntimeError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X'\n", vaddr);
                 return false;
             }
             break;
         }
         case FN_SH: // sh rt, immediate(rs) ; I Format
+        { 
+            int32_t vaddr = (int32_t)*p1 + (int32_t)imm;
+            uint16_t value = (uint16_t) (*p0 & 0xFFFF);
+
+            if (!writeHalfWord(vaddr, value)) {
+                reportRuntimeError("Invalid virtual address '%08X'\n", vaddr);
+                return false;
+            }
             break;
+        }
         case FN_SW:
         { // sw rt, immediate(rs) ; I Format
             unsigned int vaddr = *p1 + imm;
             
             if (!writeWord(vaddr, *p0)) {
-                reportRuntimeError("Invalid virtual address '%08X', try increasing the physical memory\n", vaddr);
+                reportRuntimeError("Invalid virtual address '%08X'\n", vaddr);
                 return false;
             }
             break;
