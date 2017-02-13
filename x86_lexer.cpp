@@ -8,8 +8,6 @@
 
 using namespace std;
 
-#define XTK_ERROR 9999
-
 void reportRuntimeError(const char *format, ...);
 
 #define RETURN_TOKEN(tk)    \
@@ -215,8 +213,13 @@ int X86Lexer::getNextToken()
             case '"': {
                 tkText.clear();
                 ch = nextChar();
-                APPEND_SEQUENCE(ch != '"', tkText);
+                APPEND_SEQUENCE((ch != '"') && (ch != EOF), tkText);
                 ch = nextChar();
+                
+                if (ch == EOF) {
+                    tokenInfo.set(string("unterminated string \"") + tkText + string("\""), currentLine);
+                    return XTK_ERROR;
+                }                
                 tokenInfo.set(tkText, currentLine);
                 
                 return XSTR_LITERAL;
@@ -224,9 +227,13 @@ int X86Lexer::getNextToken()
             case '\'': {
                 tkText.clear();
                 ch = nextChar();
-                APPEND_SEQUENCE(ch != '\'', tkText);
+                APPEND_SEQUENCE((ch != '\'') && (ch != EOF), tkText);
                 ch = nextChar();
                 
+                if (ch == EOF) {
+                    tokenInfo.set(string("unterminated character constant '") + tkText + string("'"), currentLine);
+                    return XTK_ERROR;
+                }
                 if (tkText.length() != 1) {
                     reportRuntimeError("Invalid character constant '%s'\n", tkText.c_str());
                 }
@@ -320,6 +327,7 @@ string X86Lexer::getTokenString(int token, TokenInfo *info)
     switch (token) {
     case XTK_EOF: tokenName = "end of input"; break;
     case XTK_EOL: tokenName = "end of line"; break;
+    case XTK_ERROR: tokenName = ""; break;
 
     case XCKW_EXEC:
     case XCKW_SET:
@@ -417,8 +425,18 @@ string X86Lexer::getTokenString(int token, TokenInfo *info)
 
     string result = tokenName;
 
-    if (info != NULL)
-        result += " '" + info->tokenLexeme + "'";
+    if (info != NULL) {
+        switch (token) {
+            case XTK_ERROR:
+                result += info->tokenLexeme;
+                break;
+            case XTK_EOL:
+            case XTK_EOF:
+                break;
+            default:
+                result += " '" + info->tokenLexeme + "'";
+        }
+    }
 
     return result;
 }

@@ -8,6 +8,7 @@
 #include <assert.h>
 #include "x86_lexer.h"
 #include "x86_tree.h"
+#include "x86_lexer.h"
 #include "util.h"
 
 extern XNodeList xstatements;
@@ -49,7 +50,11 @@ void reportError(const char *format, ...);
 %syntax_error {
     string strErr = X86Lexer::getTokenString(yymajor, TOKEN);
     ctx->error++;
-    printf("Line %d: Syntax error. Unexpected %s\n", TOKEN->line, strErr.c_str());
+
+    if (yymajor != XTK_ERROR)
+        reportError("Line %d: Syntax error. Unexpected %s\n", TOKEN->line, strErr.c_str());
+    else
+        reportError("Line %d: Syntax error. Invalid %s\n", TOKEN->line, strErr.c_str());
 }   
 
 %start_symbol input   

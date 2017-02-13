@@ -186,8 +186,13 @@ int Mips32Lexer::getNextToken()
             case '"': {
                 tkText.clear();
                 ch = nextChar();
-                APPEND_SEQUENCE(ch != '"', tkText);
+                APPEND_SEQUENCE((ch != '"') && (ch != EOF), tkText);
                 ch = nextChar();
+                
+                if (ch == EOF) {
+                    tokenInfo.set(string("unterminated string \"") + tkText + string("\""), currentLine);
+                    return MTK_ERROR;
+                }
                 tokenInfo.set(tkText, currentLine);
                 
                 return MSTR_LITERAL;
@@ -195,13 +200,18 @@ int Mips32Lexer::getNextToken()
             case '\'': {
                 tkText.clear();
                 ch = nextChar();
-                APPEND_SEQUENCE(ch != '\'', tkText);
+                APPEND_SEQUENCE((ch != '\'') && (ch != EOF), tkText);
                 ch = nextChar();
                 
+                if (ch == EOF) {
+                    tokenInfo.set(string("unterminated character constant '") + tkText + string("'"), currentLine);
+                    return MTK_ERROR;
+                }
                 if (tkText.length() != 1) {
                     tokenInfo.set("character constant '" + tkText + "'", currentLine);
                     return MTK_ERROR;
                 }
+
                 tokenInfo.set(tkText, currentLine);
                 tokenInfo.intValue = (int)tkText[0];
                 

@@ -11,6 +11,8 @@
 #include "mempool.h"
 #include "util.h"
 
+#define XTK_ERROR 9999
+
 using namespace std;
 
 class XInstruction;
