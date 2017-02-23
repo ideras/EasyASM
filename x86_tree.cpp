@@ -350,7 +350,7 @@ bool XAddrExprMult::eval(X86Sim *xsim, uint32_t &result)
 
     if ((v1 != 1) && (v1 != 2) && (v1 != 4) && (v1 != 8)) {
         reportRuntimeError("Invalid scalar multiplier %d in address expression '%s'. "
-                    "Valid values are 1, 2, 4, 8.", v1, toString().c_str());
+                    "Valid values are 1, 2, 4, 8.\n", v1, toString().c_str());
         return false;
     }
 
@@ -741,7 +741,7 @@ IMPLEMENT_INSTRUCTION(Imul2) {
         case RT_Mem:
         case RT_Reg: {
             if (ref1.bitSize != ref2.bitSize) {
-                reportRuntimeError("Invalid arguments in IMUL instruction.  Both operands should be 16 bits or 32 bits.\n");
+                reportRuntimeError("Invalid arguments in IMUL instruction. Both operands should be 16 bits or 32 bits.\n");
                 return false;
             }
             break;
@@ -801,7 +801,7 @@ IMPLEMENT_INSTRUCTION(Imul3) {
     UNUSED(sim);
     UNUSED(result);
 
-    reportRuntimeError("IMUL instruction with three argument  not supported.\n");
+    reportRuntimeError("IMUL instruction with three argument not supported.\n");
     return false;
 }
 
