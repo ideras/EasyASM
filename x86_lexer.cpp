@@ -235,8 +235,10 @@ int X86Lexer::getNextToken()
                     return XTK_ERROR;
                 }
                 if (tkText.length() != 1) {
-                    reportRuntimeError("Invalid character constant '%s'\n", tkText.c_str());
+                    tokenInfo.set("character constant '" + tkText + "'", currentLine);
+                    return XTK_ERROR;
                 }
+                
                 tokenInfo.set(tkText, currentLine);
                 tokenInfo.intValue = (int)tkText[0];
                 
@@ -262,8 +264,8 @@ int X86Lexer::getNextToken()
                         APPEND_SEQUENCE((ch=='0') || (ch=='1'), tkText);
 						
                         if (tkText.empty()) {
-                            reportRuntimeError("Invalid binary constant detected at line %d\n", currentLine);
-
+                            tokenInfo.set("binary constant '0b'", currentLine);
+                            
                             return XTK_ERROR;
                         }
 
@@ -279,8 +281,8 @@ int X86Lexer::getNextToken()
                         APPEND_SEQUENCE(isxdigit(ch), tkText);
 
                         if (tkText.empty()) {
-                            reportRuntimeError("Invalid hexadecimal constant detected at line %d\n", currentLine);
-
+                            tokenInfo.set("hexadecimal constant '0x'", currentLine);
+                            
                             return XTK_ERROR;
                         }
                         tokenInfo.set(tkText, currentLine);
@@ -312,7 +314,7 @@ int X86Lexer::getNextToken()
                     return lookUpWord(kw, KWCount, tkText);
 
                 } else {
-                    printf("Invalid symbol '%c' detected at line %d\n", ch, currentLine);
+                    tokenInfo.set(string("symbol '") + ((char)ch) + string("'"), currentLine);
                     return XTK_ERROR;
                 }
             }

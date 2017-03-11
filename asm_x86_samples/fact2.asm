@@ -1,5 +1,6 @@
   push 5
-  call fact
+  mov eax, fact
+  call eax
   add esp, 4
   #show eax
   #stop
