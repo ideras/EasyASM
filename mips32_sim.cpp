@@ -785,7 +785,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst)
             *p0 = (int32_t)*p1 + (int32_t)((int16_t)imm);
             break;
         case FN_ADDIU: // addiu rt, rs, immediate ; I Format
-            *p0 = *p1 + imm;
+            *p0 = *p1 + (uint32_t)((int16_t)imm);
             break;
         case FN_ANDI: // andi rt,rs,immediate ; I Format
             *p0 = *p1 & (imm & 0xFFFF);
