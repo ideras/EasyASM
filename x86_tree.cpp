@@ -838,7 +838,7 @@ IMPLEMENT_INSTRUCTION(Idiv) {
             temp = edx_eax / (int32_t)arg_value;
             
             if(temp > 0x7FFFFFFF || temp < (int32_t)0x80000000) {
-                reportRuntimeError("Exception in IDIV instruction\n");
+                reportRuntimeError("Exception in IDIV instruction, quotient too big.\n");
                 sim->runtimeCtx->stop = true;
                 return false;
             }
@@ -1014,7 +1014,7 @@ IMPLEMENT_INSTRUCTION(Div) {
             break;
         }
         case BS_32:{
-            uint64_t reg_edx_eax;
+            uint64_t reg_edx_eax, reg64_eax;
             uint32_t reg_edx, reg_eax;
 
             sim->getRegValue(R_EDX,reg_edx);
@@ -1022,16 +1022,16 @@ IMPLEMENT_INSTRUCTION(Div) {
 
             reg_edx_eax = ((uint64_t)reg_edx << 32) | reg_eax;
 
-            reg_eax = reg_edx_eax / arg_value;
+            reg64_eax = reg_edx_eax / arg_value;
 
-            if (reg_eax > 0xFFFFFFFF) {
+            if (reg64_eax > 0xFFFFFFFF) {
                 reportRuntimeError("Divide error Maximum Quotient: 2^32 - 1\n");
                 return false;
             }
 
             reg_edx = reg_edx_eax % arg_value;
 
-            sim->setRegValue(R_EAX, reg_eax);
+            sim->setRegValue(R_EAX, (uint32_t)reg64_eax);
             sim->setRegValue(R_EDX, reg_edx);
 
             result.address = R_EAX;

@@ -11,7 +11,7 @@ using namespace std;
 #define MAX_VALUE_U(bs) ( ((1 << ((bs)-1))-1) | (1 << ((bs)-1)) )
 #define MASK_FOR(bs)    MAX_VALUE_U(bs)
 
-#define SIGN_BIT(X, BS) ((X) & (1 << ((BS)-1)))
+#define SIGN_BIT(X, BS) (((X) & (1 << ((BS)-1))) != 0)
 
 #define ARITH_OVFL(RESULT, OP1, OP2, BS)    (SIGN_BIT (OP1, BS) == SIGN_BIT (OP2, BS) \
                                               && SIGN_BIT (OP1, BS) != SIGN_BIT (RESULT, BS))
