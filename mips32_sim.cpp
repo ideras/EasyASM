@@ -703,13 +703,12 @@ bool MIPS32Sim::execInstruction(MInstruction *inst)
             *p0 = *p1 & *p2;
             break;
         case FN_SRA: // sra rd,rt,sa ; R Format
-            *p0 = *p1 >> imm;
-            if (SIGN_BIT (*p0, 32) != SIGN_BIT(*p1, 32)) // == SIGN_BIT (p1, 32))
-                *p0 =  signExtend(*p0, 32 - imm, 32);                    
+            *p0 = ((int32_t)*p1) >> imm;
             break;            
         case FN_BREAK: // break  ; R Format
             break;
         case FN_SLLV: // sllv rd,rt,rs ; R Format
+            *p0 = *p1 << *p2;
             break;
         case FN_DIV: // div rs,rt ; R Format
             hi_lo = ((int32_t)*p0 / (int32_t)*p1);
@@ -717,6 +716,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst)
             hi_lo = (((uint64_t) ((int32_t)*p0 % (int32_t)*p1)) << 32) | hi_lo;
             break;
         case FN_SRLV: // srlv rd,rt,rs ; R Format
+            *p0 = *p1 >> *p2;
             break;
         case FN_DIVU: // divu rs,rt ; R Format
             hi_lo = *p0 / *p1;
@@ -725,6 +725,7 @@ bool MIPS32Sim::execInstruction(MInstruction *inst)
             printf("%u\n", (*p0 % *p1)); 
             break;
         case FN_SRAV: // srav rd,rt,rs ; R Format
+            *p0 = ((int32_t)*p1) >> *p2;
             break;
         case FN_JALR: // jalr rs ; R Format
             reg[RA_INDEX] = ctx->pc;

@@ -17,3 +17,6 @@ x86_parser.h
 
 #Netbeans project
 nbproject/
+
+#C sample source files
+csrc/
