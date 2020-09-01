@@ -7,7 +7,7 @@
 #Executables
 *.out
 EasyASM
-/scrips/lemon/lemon
+/scripts/lemon/lemon
 
 #Directories
 /generated
