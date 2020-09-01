@@ -9,8 +9,18 @@ which are described in the section commands.
 ## Installation
 
 To install the program you need a C++ compiler and the source code.  Once you have both you just need to enter
-the directory with the source code and type the command `make`.  This process has been tested on linux.  On 
-windows it might work if you use **msys**
+the directory with the source code and type the commands
+
+### Linux (Debian based distribution)
+
+```console
+$ make deps
+$ make
+```
+
+### Windows
+
+It might work if you use **msys**
 
 ## Usage
 
