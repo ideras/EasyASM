@@ -10,4 +10,3 @@ sudo chmod +x ./build.sh
 ./build.sh
 sudo cp ./lemon /usr/bin/
 echo "Installed lemon into /usr/bin"
-ls /usr/bin | grep lemon

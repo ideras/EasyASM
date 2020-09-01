@@ -32,3 +32,6 @@ generated/mips32_parser.cpp: mips32_parser.y
 clean:
 	rm -f *.o
 	rm -fr generated/
+
+deps:
+	sudo bash ./scripts/install-deps.sh
